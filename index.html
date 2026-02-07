@@ -477,12 +477,7 @@ header + .tabs{
       const btn = document.createElement("button");
       btn.className = "drink";
       btn.innerHTML = `<div class="name">${d.name}</div><div class="price">${money(d.price)}</div>`;
-      btn.addEventListener("click", () => addToOrder(d.id, 1));
-      grid.appendChild(btn);
-    });
-  }
-  
-  btn.addEventListener("click", (e) => {
+      btn.addEventListener("click", (e) => {
   // flash highlight + ripple origin
   const r = btn.getBoundingClientRect();
   const x = ((e.clientX || (r.left + r.width/2)) - r.left) / r.width * 100;
@@ -495,7 +490,9 @@ header + .tabs{
 
   addToOrder(d.id, 1);
 });
-
+      grid.appendChild(btn);
+    });
+  }
   // ====== ORDER OPS ======
   function addToOrder(id, qty){
     currentOrder[id] = (currentOrder[id] || 0) + qty;
