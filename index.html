@@ -260,6 +260,21 @@ header + .tabs{
 
   </style>
 </head>
+
+<!-- Payment method modal -->
+<div id="pay-modal" style="display:none;">
+  <div class="pay-card">
+    <div class="pay-title">Select payment</div>
+
+    <div class="pay-actions">
+      <button type="button" class="btn primary" id="pay-cash">💵 Cash</button>
+      <button type="button" class="btn primary" id="pay-card">💳 Card</button>
+    </div>
+
+    <button type="button" class="btn" id="pay-cancel" style="margin-top:12px; width:100%;">Cancel</button>
+  </div>
+</div>
+
 <body>
   <header>
     <h1>Feckenham Wake Bar </h1>
