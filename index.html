@@ -481,6 +481,20 @@ header + .tabs{
       grid.appendChild(btn);
     });
   }
+  
+  btn.addEventListener("click", (e) => {
+  // flash highlight + ripple origin
+  const r = btn.getBoundingClientRect();
+  const x = ((e.clientX || (r.left + r.width/2)) - r.left) / r.width * 100;
+  const y = ((e.clientY || (r.top + r.height/2)) - r.top) / r.height * 100;
+  btn.style.setProperty("--rx", x + "%");
+  btn.style.setProperty("--ry", y + "%");
+
+  btn.classList.add("flash");
+  setTimeout(() => btn.classList.remove("flash"), 180);
+
+  addToOrder(d.id, 1);
+});
 
   // ====== ORDER OPS ======
   function addToOrder(id, qty){
@@ -786,20 +800,6 @@ function renderCurrentOrder(){
 
   // Init
   renderMenu();
-  btn.addEventListener("click", (e) => {
-  // flash highlight + ripple origin
-  const r = btn.getBoundingClientRect();
-  const x = ((e.clientX || (r.left + r.width/2)) - r.left) / r.width * 100;
-  const y = ((e.clientY || (r.top + r.height/2)) - r.top) / r.height * 100;
-  btn.style.setProperty("--rx", x + "%");
-  btn.style.setProperty("--ry", y + "%");
-
-  btn.classList.add("flash");
-  setTimeout(() => btn.classList.remove("flash"), 180);
-
-  addToOrder(d.id, 1);
-});
-  
   renderCurrentOrder();
   renderOrders();
   renderSummary();
