@@ -46,6 +46,74 @@
     .spacer { height: 10px; }
     .twoCol { display: grid; grid-template-columns: 1fr; gap: 5px; }
     @media (min-width: 900px){ .twoCol { grid-template-columns: 1.1fr .9fr; } }
+    /* === THEME 2: Dark POS === */
+:root{
+  --bg:#0b0b10;
+  --card:#12121a;
+  --card2:#161622;
+  --text:#f5f7ff;
+  --muted:#a8b0c3;
+  --border: rgba(255,255,255,.10);
+  --accent:#f59e0b;
+  --accent2:#ef4444;
+}
+
+body{
+  background:
+    radial-gradient(900px 600px at 20% 0%, rgba(245,158,11,.20), transparent 60%),
+    radial-gradient(900px 600px at 90% 10%, rgba(239,68,68,.18), transparent 55%),
+    var(--bg);
+  color: var(--text);
+}
+
+header{
+  background: rgba(10,10,16,.86);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.panel{
+  background: linear-gradient(180deg, var(--card), var(--card2));
+  border: 1px solid var(--border);
+  box-shadow: 0 16px 34px rgba(0,0,0,.45);
+}
+
+.tab{
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 14px;
+}
+
+.tab.active{
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #111;
+  border: none;
+}
+
+.drink{
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.drink .price, .muted{ color: var(--muted); }
+
+.btn{
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.btn.primary{
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #111;
+  border: none;
+}
+
+.bigTotal{ font-size: 38px; font-weight: 900; }
   </style>
 </head>
 <body>
