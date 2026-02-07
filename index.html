@@ -604,11 +604,7 @@ function resolvePayment(method){
     renderCurrentOrder();
   }
 
- async function completeOrder(){
-    // Ask for payment type
-  const payment = await choosePaymentMethod();
-  if(!payment) return; // cancelled
-      payment, // "cash" or "card"
+ function completeOrder(){
     const lines = Object.entries(currentOrder).map(([id, qty]) => {
       const d = drinkById(id);
       return { id, name: d.name, price: d.price, qty, lineTotal: d.price * qty };
@@ -619,7 +615,6 @@ function resolvePayment(method){
       time: nowStamp(),
       note: orderNote || "",
       total: currentTotal(),
-      payment,
       lines
     };
 
