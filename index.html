@@ -160,6 +160,44 @@ header{
 .drink, .btn{ transition: transform .05s ease; }
 .bigTotal{ font-size: 42px; font-weight: 900; }
 
+/* Order Complete overlay */
+#order-complete-overlay{
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.65);
+  z-index: 9999;
+}
+
+#order-complete-overlay .oco-card{
+  width: min(520px, 90vw);
+  border-radius: 22px;
+  padding: 22px 18px;
+  text-align: center;
+  background: rgba(18,18,26,.95);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 24px 60px rgba(0,0,0,.55);
+}
+
+#order-complete-overlay .oco-title{
+  font-weight: 900;
+  font-size: 26px;
+  margin-bottom: 10px;
+}
+
+#order-complete-overlay .oco-total{
+  font-weight: 950;
+  font-size: 54px;
+  margin: 6px 0 10px 0;
+}
+
+#order-complete-overlay .oco-sub{
+  opacity: .8;
+  font-size: 14px;
+}
+
   </style>
 </head>
 <body>
@@ -339,6 +377,20 @@ header{
   // ====== HELPERS ======
   const money = (n) => "£" + (Math.round(n * 100) / 100).toFixed(2);
   const nowStamp = () => new Date().toISOString();
+  
+  function showOrderCompleteOverlay(total){
+  const overlay = document.getElementById("order-complete-overlay");
+  const totalEl = document.getElementById("oco-total");
+  if(!overlay || !totalEl) return;
+
+  totalEl.textContent = money(total);
+  overlay.style.display = "flex";
+
+  // Hide after a short moment
+  setTimeout(() => {
+    overlay.style.display = "none";
+  }, 900);
+}
 
   function loadOrders(){
     try { return JSON.parse(localStorage.getItem(KEY_ORDERS) || "[]"); }
@@ -419,10 +471,15 @@ header{
     orders.unshift(order);
     saveOrders(orders);
 
-    clearOrder();
-    renderOrders();
-    renderSummary();
-    switchTab("orders");
+    const total = order.total;
+
+clearOrder();
+renderOrders();
+renderSummary();
+
+// Show confirmation and stay ready on Order screen
+switchTab("order");
+showOrderCompleteOverlay(total);
   }
 // ====== RENDER: CURRENT ORDER ======
 function renderCurrentOrder(){
@@ -673,6 +730,14 @@ function renderCurrentOrder(){
   renderOrders();
   renderSummary();
 </script>
+<!-- Order complete overlay -->
+<div id="order-complete-overlay" style="display:none;">
+  <div class="oco-card">
+    <div class="oco-title">✅ Order Complete</div>
+    <div class="oco-total" id="oco-total">£0.00</div>
+    <div class="oco-sub">Ready for the next order…</div>
+  </div>
+</div>
 </body>
 
 </html>
