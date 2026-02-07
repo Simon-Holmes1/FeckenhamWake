@@ -127,6 +127,39 @@ header{
   border-radius: 14px;
 }.btn:active, .drink:active { transform: scale(0.98); }
 .btn, .drink { transition: transform .05s ease; }
+
+/* iPad-friendly menu sizing for ~12 drinks */
+.drink{
+  padding: 18px;
+  border-radius: 18px;
+}
+.drink .name{
+  font-size: 18px;
+  font-weight: 850;
+  line-height: 1.1;
+  text-align: center;
+}
+.drink .price{
+  font-size: 14px;
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* Bigger tap targets: iPad portrait */
+@media (min-width: 760px){
+  .grid{ grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+}
+
+/* iPad landscape: fit 4 across nicely */
+@media (min-width: 1024px){
+  .grid{ grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+}
+
+/* POS feel */
+.drink:active, .btn:active{ transform: scale(0.98); }
+.drink, .btn{ transition: transform .05s ease; }
+.bigTotal{ font-size: 42px; font-weight: 900; }
+
   </style>
 </head>
 <body>
