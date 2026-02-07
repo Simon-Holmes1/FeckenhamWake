@@ -258,6 +258,43 @@ header + .tabs{
 
 .drink.flash::after{ opacity: 1; }
 
+/* Payment modal */
+#pay-modal{
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.65);
+  z-index: 10000;
+}
+
+#pay-modal .pay-card{
+  width: min(520px, 92vw);
+  border-radius: 22px;
+  padding: 18px;
+  background: rgba(18,18,26,.96);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 24px 60px rgba(0,0,0,.55);
+}
+
+#pay-modal .pay-title{
+  font-weight: 900;
+  font-size: 22px;
+  margin-bottom: 14px;
+}
+
+#pay-modal .pay-actions{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+#pay-modal .pay-actions .btn{
+  padding: 16px 14px;
+  font-size: 18px;
+  border-radius: 16px;
+}
   </style>
 </head>
 
@@ -467,6 +504,34 @@ header + .tabs{
   }, 1800);
 }
 
+// --- Payment modal state ---
+let pendingOrderPaymentResolver = null;
+
+function openPaymentModal(){
+  const modal = document.getElementById("pay-modal");
+  if(modal) modal.style.display = "flex";
+}
+
+function closePaymentModal(){
+  const modal = document.getElementById("pay-modal");
+  if(modal) modal.style.display = "none";
+}
+
+// Returns a Promise that resolves to "cash" or "card", or null if cancelled
+function choosePaymentMethod(){
+  return new Promise((resolve) => {
+    pendingOrderPaymentResolver = resolve;
+    openPaymentModal();
+  });
+}
+
+function resolvePayment(method){
+  closePaymentModal();
+  if(pendingOrderPaymentResolver){
+    pendingOrderPaymentResolver(method);
+    pendingOrderPaymentResolver = null;
+  }
+}
   function loadOrders(){
     try { return JSON.parse(localStorage.getItem(KEY_ORDERS) || "[]"); }
     catch { return []; }
@@ -539,7 +604,11 @@ header + .tabs{
     renderCurrentOrder();
   }
 
-  function completeOrder(){
+ async function completeOrder(){
+    // Ask for payment type
+  const payment = await choosePaymentMethod();
+  if(!payment) return; // cancelled
+      payment, // "cash" or "card"
     const lines = Object.entries(currentOrder).map(([id, qty]) => {
       const d = drinkById(id);
       return { id, name: d.name, price: d.price, qty, lineTotal: d.price * qty };
@@ -550,6 +619,7 @@ header + .tabs{
       time: nowStamp(),
       note: orderNote || "",
       total: currentTotal(),
+      payment,
       lines
     };
 
@@ -808,8 +878,11 @@ function renderCurrentOrder(){
     if(n === null) return;
     orderNote = n.trim();
     renderCurrentOrder();
+    
+    document.getElementById("pay-cash").addEventListener("click", () => resolvePayment("cash"));
+document.getElementById("pay-card").addEventListener("click", () => resolvePayment("card"));
+document.getElementById("pay-cancel").addEventListener("click", () => resolvePayment(null));
   });
-
   // Init
   renderMenu();
   renderCurrentOrder();
