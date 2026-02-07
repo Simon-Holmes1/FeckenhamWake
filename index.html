@@ -198,6 +198,66 @@ header{
   font-size: 14px;
 }
 
+/* === FORCE DARK BACKDROP (tabs strip + bottom overscroll) === */
+html, body{
+  background: #0b0b10 !important;   /* solid black */
+  color: #f5f7ff;
+  min-height: 100%;
+}
+
+/* Remove any lingering gradient backgrounds from earlier themes */
+body{
+  background-image: none !important;
+}
+
+/* Tabs bar: make it match the rest of the dark UI */
+.tabs{
+  background: #0b0b10 !important;
+  border-bottom: 1px solid rgba(255,255,255,.10) !important;
+  box-shadow: none !important;
+}
+
+/* Main content area should not introduce a light “strip” */
+main{
+  background: transparent !important;
+}
+
+/* If anything wraps the tabs in a white container, this helps */
+header{
+  background: rgba(10,10,16,.86) !important;
+}
+
+/* Optional: if you still see a light bar directly under header */
+header + .tabs{
+  margin-top: 0 !important;
+}
+
+/* Tap feedback for drink buttons */
+.drink{
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.drink.flash{
+  outline: 3px solid rgba(245, 158, 11, 0.9); /* uses your Dark POS vibe */
+  box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.18);
+}
+
+/* quick ripple */
+.drink::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background: radial-gradient(circle at var(--rx, 50%) var(--ry, 50%),
+              rgba(245,158,11,.35), transparent 55%);
+  opacity: 0;
+  transition: opacity 160ms ease;
+  pointer-events:none;
+}
+
+.drink.flash::after{ opacity: 1; }
+
   </style>
 </head>
 <body>
@@ -726,6 +786,20 @@ function renderCurrentOrder(){
 
   // Init
   renderMenu();
+  btn.addEventListener("click", (e) => {
+  // flash highlight + ripple origin
+  const r = btn.getBoundingClientRect();
+  const x = ((e.clientX || (r.left + r.width/2)) - r.left) / r.width * 100;
+  const y = ((e.clientY || (r.top + r.height/2)) - r.top) / r.height * 100;
+  btn.style.setProperty("--rx", x + "%");
+  btn.style.setProperty("--ry", y + "%");
+
+  btn.classList.add("flash");
+  setTimeout(() => btn.classList.remove("flash"), 180);
+
+  addToOrder(d.id, 1);
+});
+  
   renderCurrentOrder();
   renderOrders();
   renderSummary();
