@@ -1228,6 +1228,7 @@ btn.innerHTML = `
     const entries = Object.entries(currentOrder);
 
     const completeBtn = document.getElementById("btn-complete");
+    const holdBtn = document.getElementById("btn-hold");
     const noteEl = document.getElementById("order-note");
 
     function setCompleteEnabled(enabled){
@@ -1237,7 +1238,11 @@ btn.innerHTML = `
       } else {
         completeBtn.disabled = true;
         completeBtn.setAttribute("disabled", "disabled");
-      }
+        if(holdBtn){
+  holdBtn.disabled = !enabled;
+  if(enabled) holdBtn.removeAttribute("disabled");
+  else holdBtn.setAttribute("disabled","disabled");
+}
     }
 
     if(entries.length === 0){
@@ -1475,6 +1480,8 @@ btn.innerHTML = `
 
   // ====== WIRING ======
 
+document.getElementById("btn-hold").addEventListener("click", holdCurrentOrder);
+  
   document.getElementById("variant-modal").addEventListener("click", (e) => {
   if(e.target.id === "variant-modal") e.target.style.display = "none";
 });
@@ -1515,9 +1522,12 @@ document.getElementById("variant-close").addEventListener("click", () => {
   renderOrders();
   renderSummary();
   updateStatusBar();
+  renderHeld();
+
 </script>
 </body>
 </html>
+
 
 
 
