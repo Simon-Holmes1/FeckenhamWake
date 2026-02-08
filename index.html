@@ -442,6 +442,7 @@ header + .tabs{
           <div class="row" style="gap:8px;">
             <button class="btn" id="btn-export">Export CSV</button>
             <button class="btn danger" id="btn-clear-all">Clear Day</button>
+            updateStatusBar();
           </div>
         </div>
 
@@ -607,8 +608,7 @@ function resolvePayment(method){
     catch { return []; }
   }
   function saveOrders(orders){
-  localStorage.setItem(KEY_ORDERS, JSON.stringify(orders));
-}
+    localStorage.setItem(KEY_ORDERS, JSON.stringify(orders));
   }
   function drinkById(id){ return DRINKS.find(d => d.id === id); }
 
