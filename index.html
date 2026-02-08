@@ -655,10 +655,11 @@ function importMenu(){
   const cleaned = parsed.map(d => ({
     id: String(d.id || "").trim(),
     name: String(d.name || "").trim(),
-    price: Number(d.price || 0)
+    price: Number(d.price || 0),
+    img: String(d.img || "").trim()
   }));
 
-  const err = validateMenu(cleaned);
+const err = validateMenu(cleaned);
   if(err){
     alert("Import failed: " + err);
     return;
@@ -854,6 +855,112 @@ function saveHeld(arr){
   localStorage.setItem(KEY_HELD, JSON.stringify(arr));
 }
   
+
+function holdCurrentOrder(){
+  const entries = Object.entries(currentOrder);
+  if(entries.length === 0) return;
+
+  const held = loadHeld();
+
+  const lines = entries.map(([id, qty]) => {
+    const d = drinkById(id);
+    return {
+      id,
+      name: d?.name || id,
+      price: Number(d?.price || 0),
+      qty: Number(qty || 0),
+      lineTotal: Number(d?.price || 0) * Number(qty || 0),
+      img: d?.img || ""
+    };
+  });
+
+  const heldOrder = {
+    time: new Date().toISOString(),
+    note: orderNote || "",
+    total: currentTotal(),
+    lines
+  };
+
+  held.unshift(heldOrder);
+  while(held.length > 10) held.pop(); // keep last 10
+
+  saveHeld(held);
+
+  clearOrder();
+  renderHeld();
+}
+
+function recallHeld(index){
+  const held = loadHeld();
+  const item = held[index];
+  if(!item) return;
+
+  if(Object.keys(currentOrder).length > 0){
+    const ok = confirm("Replace current order with this held order?");
+    if(!ok) return;
+  }
+
+  currentOrder = {};
+  (item.lines || []).forEach(l => {
+    currentOrder[l.id] = (currentOrder[l.id] || 0) + Number(l.qty || 0);
+  });
+  orderNote = item.note || "";
+
+  held.splice(index, 1);
+  saveHeld(held);
+
+  renderCurrentOrder();
+  renderHeld();
+}
+
+function deleteHeld(index){
+  const held = loadHeld();
+  held.splice(index, 1);
+  saveHeld(held);
+  renderHeld();
+}
+
+function renderHeld(){
+  const wrap = document.getElementById("held-wrap");
+  const list = document.getElementById("held-list");
+  if(!wrap || !list) return;
+
+  const held = loadHeld();
+
+  if(held.length === 0){
+    wrap.style.display = "none";
+    list.innerHTML = "";
+    return;
+  }
+
+  wrap.style.display = "block";
+  list.innerHTML = "";
+
+  held.forEach((h, idx) => {
+    const itemsCount = (h.lines || []).reduce((s,l) => s + (Number(l.qty || 0)), 0);
+    const t = new Date(h.time);
+    const timeStr = isNaN(t.getTime()) ? "" : t.toLocaleTimeString(undefined, { hour:"2-digit", minute:"2-digit" });
+
+    const chip = document.createElement("div");
+    chip.className = "held-chip";
+    chip.innerHTML = `
+      <div>
+        Hold ${idx + 1} · ${money(h.total)}
+        <div class="sub">${itemsCount} items · ${timeStr}${h.note ? " · " + escapeHtml(h.note) : ""}</div>
+      </div>
+      <button type="button" class="x" title="Delete held order">×</button>
+    `;
+
+    chip.addEventListener("click", () => recallHeld(idx));
+    chip.querySelector(".x").addEventListener("click", (e) => {
+      e.stopPropagation();
+      deleteHeld(idx);
+    });
+
+    list.appendChild(chip);
+  });
+}
+
 function applyTapFeedback(btn, e){
   const r = btn.getBoundingClientRect();
   const x = ((e.clientX || (r.left + r.width/2)) - r.left) / r.width * 100;
@@ -1116,72 +1223,72 @@ btn.innerHTML = `
   const tbody = document.getElementById("order-lines");
   const entries = Object.entries(currentOrder);
 
-  renderHeld(); // <-- add this
-  ...
-}
+  const completeBtn = document.getElementById("btn-complete");
+  const holdBtn = document.getElementById("btn-hold");
+  const noteEl = document.getElementById("order-note");
 
-    const completeBtn = document.getElementById("btn-complete");
-    const noteEl = document.getElementById("order-note");
-    const holdBtn = document.getElementById("btn-hold");
+  // Always refresh held UI too
+  renderHeld();
 
-    function setCompleteEnabled(enabled){
-      if(holdBtn){
-  holdBtn.disabled = !enabled;
-  if(enabled) holdBtn.removeAttribute("disabled");
-  else holdBtn.setAttribute("disabled","disabled");
-}
-        if(enabled){
-        completeBtn.disabled = false;
-        completeBtn.removeAttribute("disabled");
-      } else {
-        completeBtn.disabled = true;
-        completeBtn.setAttribute("disabled", "disabled");
-      }
+  function setActionButtonsEnabled(enabled){
+    if(completeBtn){
+      completeBtn.disabled = !enabled;
+      if(enabled) completeBtn.removeAttribute("disabled");
+      else completeBtn.setAttribute("disabled","disabled");
     }
-
-    if(entries.length === 0){
-      tbody.innerHTML = `<tr><td colspan="3" class="muted">No items yet.</td></tr>`;
-      document.getElementById("order-total").textContent = money(0);
-      setCompleteEnabled(false);
-      noteEl.style.display = "none";
-      return;
+    if(holdBtn){
+      holdBtn.disabled = !enabled;
+      if(enabled) holdBtn.removeAttribute("disabled");
+      else holdBtn.setAttribute("disabled","disabled");
     }
+  }
 
-    tbody.innerHTML = "";
-    entries
-      .sort((a,b) => drinkById(a[0]).name.localeCompare(drinkById(b[0]).name))
-      .forEach(([id, qty]) => {
-        const d = drinkById(id);
-        const tr = document.createElement("tr");
+  if(entries.length === 0){
+    tbody.innerHTML = `<tr><td colspan="3" class="muted">No items selected.</td></tr>`;
+    document.getElementById("order-total").textContent = money(0);
+    setActionButtonsEnabled(false);
+    if(noteEl) noteEl.style.display = "none";
+    return;
+  }
 
-        const tdName = document.createElement("td");
-        tdName.innerHTML = `<div style="font-weight:800;">${escapeHtml(d.name)}</div><div class="muted">${money(d.price)} each</div>`;
+  tbody.innerHTML = "";
 
-        const tdQty = document.createElement("td");
-        tdQty.innerHTML = `
-          <div class="qtyControls">
-            <button type="button" class="btn" data-dec>-</button>
-            <div style="min-width:28px; text-align:center; font-weight:900;">${qty}</div>
-            <button type="button" class="btn" data-inc>+</button>
-          </div>
-        `;
+  entries
+    .sort((a,b) => (drinkById(a[0])?.name || "").localeCompare(drinkById(b[0])?.name || ""))
+    .forEach(([id, qty]) => {
+      const d = drinkById(id);
+      if(!d) return;
 
-        tdQty.querySelector("[data-dec]").addEventListener("click", () => addToOrder(id, -1));
-        tdQty.querySelector("[data-inc]").addEventListener("click", () => addToOrder(id, 1));
+      const tr = document.createElement("tr");
 
-        const tdLine = document.createElement("td");
-        tdLine.style.fontWeight = "900";
-        tdLine.textContent = money(d.price * qty);
+      const tdName = document.createElement("td");
+      tdName.innerHTML = `<div style="font-weight:800;">${escapeHtml(d.name)}</div><div class="muted">${money(d.price)} each</div>`;
 
-        tr.appendChild(tdName);
-        tr.appendChild(tdQty);
-        tr.appendChild(tdLine);
-        tbody.appendChild(tr);
-      });
+      const tdQty = document.createElement("td");
+      tdQty.innerHTML = `
+        <div class="qtyControls">
+          <button type="button" class="btn" data-dec>-</button>
+          <div style="min-width:28px; text-align:center; font-weight:900;">${qty}</div>
+          <button type="button" class="btn" data-inc>+</button>
+        </div>
+      `;
+      tdQty.querySelector("[data-dec]").addEventListener("click", () => addToOrder(id, -1));
+      tdQty.querySelector("[data-inc]").addEventListener("click", () => addToOrder(id, 1));
 
-    document.getElementById("order-total").textContent = money(currentTotal());
-    setCompleteEnabled(true);
+      const tdLine = document.createElement("td");
+      tdLine.style.fontWeight = "900";
+      tdLine.textContent = money(d.price * qty);
 
+      tr.appendChild(tdName);
+      tr.appendChild(tdQty);
+      tr.appendChild(tdLine);
+      tbody.appendChild(tr);
+    });
+
+  document.getElementById("order-total").textContent = money(currentTotal());
+  setActionButtonsEnabled(true);
+
+  if(noteEl){
     if(orderNote){
       noteEl.style.display = "block";
       noteEl.textContent = "Note: " + orderNote;
@@ -1189,9 +1296,10 @@ btn.innerHTML = `
       noteEl.style.display = "none";
     }
   }
+}
 
-  // ====== COMPLETE ORDER (with payment) ======
-  async function completeOrderWithPay(){
+  // ====== COMPLETE ORDER (cash/card prompt) ======
+  function completeOrderWithPay(){
     const lines = Object.entries(currentOrder).map(([id, qty]) => {
       const d = drinkById(id);
       return { id, name: d.name, price: d.price, qty, lineTotal: d.price * qty };
@@ -1420,10 +1528,6 @@ document.getElementById("variant-close").addEventListener("click", () => {
 </script>
 </body>
 </html>
-
-
-
-
 
 
 
