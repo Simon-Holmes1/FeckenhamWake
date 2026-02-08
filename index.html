@@ -541,11 +541,12 @@
       <table style="margin:0;">
         <thead>
           <tr>
-            <th style="width:180px;">ID</th>
-            <th>Name</th>
-            <th style="width:140px;">Price</th>
-            <th style="width:90px;"></th>
-          </tr>
+  <th style="width:180px;">ID</th>
+  <th>Name</th>
+  <th style="width:140px;">Price</th>
+  <th style="width:220px;">Image</th>
+  <th style="width:90px;"></th>
+</tr>
         </thead>
         <tbody id="admin-menu-body"></tbody>
       </table>
@@ -657,11 +658,12 @@ function renderAdminTable(){
   adminDraft.forEach((d, idx) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><input data-k="id" data-i="${idx}" value="${escapeHtml(d.id)}"></td>
-      <td><input data-k="name" data-i="${idx}" value="${escapeHtml(d.name)}"></td>
-      <td><input data-k="price" data-i="${idx}" value="${Number(d.price).toFixed(2)}"></td>
-      <td><button type="button" class="btn danger" data-del="${idx}">Delete</button></td>
-    `;
+  <td><input data-k="id" data-i="${idx}" value="${escapeHtml(d.id)}"></td>
+  <td><input data-k="name" data-i="${idx}" value="${escapeHtml(d.name)}"></td>
+  <td><input data-k="price" data-i="${idx}" value="${Number(d.price).toFixed(2)}"></td>
+  <td><input data-k="img" data-i="${idx}" value="${escapeHtml(d.img || "")}" placeholder="img/poretti.png"></td>
+  <td><button type="button" class="btn danger" data-del="${idx}">Delete</button></td>
+`;
     body.appendChild(tr);
   });
 
@@ -702,10 +704,11 @@ function validateMenu(menuArr){
 
 function applyAdminMenu(){
   const cleaned = adminDraft.map(d => ({
-    id: String(d.id || "").trim(),
-    name: String(d.name || "").trim(),
-    price: Number(d.price || 0)
-  }));
+  id: String(d.id || "").trim(),
+  name: String(d.name || "").trim(),
+  price: Number(d.price || 0),
+  img: String(d.img || "").trim()
+}));
 
   const err = validateMenu(cleaned);
   if(err){ alert(err); return; }
@@ -772,10 +775,11 @@ function loadMenu(){
     const parsed = JSON.parse(raw);
     if(!Array.isArray(parsed)) return DRINKS_DEFAULT.slice();
     return parsed.map(x => ({
-      id: String(x.id || "").trim(),
-      name: String(x.name || "").trim(),
-      price: Number(x.price || 0)
-    }));
+  id: String(x.id || "").trim(),
+  name: String(x.name || "").trim(),
+  price: Number(x.price || 0),
+  img: String(x.img || "").trim()
+}));
   } catch {
     return DRINKS_DEFAULT.slice();
   }
@@ -924,14 +928,14 @@ titleEl.addEventListener("touchend", () => { clearTimeout(lpTimer); lpTimer = nu
 // Admin buttons
 document.getElementById("admin-close").addEventListener("click", closeAdmin);
 document.getElementById("admin-add").addEventListener("click", () => {
-  adminDraft.push({ id: "new-drink", name: "New drink", price: 0.00 });
+  adminDraft.push({ id: "new-drink", name: "New drink", price: 0.00, img: "" });
   renderAdminTable();
 });
 document.getElementById("admin-save").addEventListener("click", applyAdminMenu);
 document.getElementById("admin-reset").addEventListener("click", () => {
   if(confirm("Reset menu to default?")){
     localStorage.removeItem(KEY_MENU);
-    DRINKS = DRINKS_DEFAULT.slice();
+    DRINKS = DRINKS_DEFAULT.map(d => ({ ...d }));
     renderMenu();
     renderCurrentOrder();
     renderOrders();
@@ -1343,6 +1347,7 @@ document.getElementById("variant-close").addEventListener("click", () => {
 </script>
 </body>
 </html>
+
 
 
 
