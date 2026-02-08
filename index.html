@@ -607,7 +607,7 @@ function resolvePayment(method){
     catch { return []; }
   }
   function saveOrders(orders){
-  localStorage.setItem(KEY_ORDERS, JSON.stringify(orders)); }
+  localStorage.setItem(KEY_ORDERS, JSON.stringify(orders));
 }
   }
   function drinkById(id){ return DRINKS.find(d => d.id === id); }
