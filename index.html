@@ -338,6 +338,38 @@
   box-shadow: 0 30px 80px rgba(0,0,0,.70);
 }
     
+  
+/* Held order chips (for Hold/Recall) */
+.held-chip{
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  color: rgba(245,247,255,.95);
+  font-weight: 850;
+  cursor: pointer;
+  user-select: none;
+}
+.held-chip .sub{
+  font-weight: 700;
+  color: rgba(245,247,255,.70);
+  font-size: 12px;
+  margin-top: 2px;
+}
+.held-chip .x{
+  margin-left: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.05);
+  color: rgba(245,247,255,.85);
+  font-weight: 950;
+  cursor: pointer;
+}
+
   </style>
 </head>
 
@@ -410,8 +442,21 @@
 
             <div class="spacer"></div>
 
-            <div class="row" style="gap:8px;">
+            <!-- HELD ORDERS TRAY -->
+            <div id="held-wrap" style="display:none;">
+              <div class="row">
+                <div style="font-weight:900;">Held Orders</div>
+                <div class="muted">Tap to recall</div>
+              </div>
+              <div id="held-list" class="row" style="gap:8px; flex-wrap:wrap; margin-top:10px;"></div>
+            </div>
+            <!-- END HELD ORDERS TRAY -->
+
+            <div class="spacer"></div>
+
+            
               <button class="btn" id="btn-undo">Undo</button>
+              <button class="btn" id="btn-hold" disabled>Hold Order</button>
               <button type="button" class="btn primary" id="btn-complete" disabled>Complete Order</button>
             </div>
 
@@ -612,7 +657,8 @@ function importMenu(){
   const cleaned = parsed.map(d => ({
     id: String(d.id || "").trim(),
     name: String(d.name || "").trim(),
-    price: Number(d.price || 0)
+    price: Number(d.price || 0),
+    img: String(d.img || "").trim()
   }));
 
   const err = validateMenu(cleaned);
@@ -626,6 +672,7 @@ function importMenu(){
   // Refresh everything
   renderMenu();
   renderCurrentOrder();
+  renderHeld();
   renderOrders();
   renderSummary();
   updateStatusBar();
@@ -718,6 +765,7 @@ function applyAdminMenu(){
   // Refresh screens
   renderMenu();
   renderCurrentOrder();
+  renderHeld();
   renderOrders();
   renderSummary();
   updateStatusBar();
@@ -793,6 +841,7 @@ function saveMenu(menuArr){
 
   // ====== STORAGE KEYS ======
   const KEY_ORDERS = "popupbar_orders_v2"; // bumped to v2 for clean schema
+  const KEY_HELD = "popupbar_held_orders_v1";
 
   // ====== STATE ======
   let currentOrder = {};  // { drinkId: qty }
@@ -860,6 +909,15 @@ function openVariantModal(group){
   function saveOrders(orders){
     localStorage.setItem(KEY_ORDERS, JSON.stringify(orders));
   }
+
+  function loadHeld(){
+    try { return JSON.parse(localStorage.getItem(KEY_HELD) || "[]"); }
+    catch { return []; }
+  }
+  function saveHeld(held){
+    localStorage.setItem(KEY_HELD, JSON.stringify(held));
+  }
+
 
   function escapeHtml(s){
     return String(s)
@@ -938,6 +996,7 @@ document.getElementById("admin-reset").addEventListener("click", () => {
     DRINKS = DRINKS_DEFAULT.map(d => ({ ...d }));
     renderMenu();
     renderCurrentOrder();
+  renderHeld();
     renderOrders();
     renderSummary();
     updateStatusBar();
@@ -1058,28 +1117,148 @@ btn.innerHTML = `
     renderCurrentOrder();
   }
 
+  // ====== HOLD / RECALL (does NOT count as a sale) ======
+  function holdCurrentOrder(){
+    const entries = Object.entries(currentOrder);
+    if(entries.length === 0) return;
+
+    const held = loadHeld();
+
+    const lines = entries.map(([id, qty]) => {
+      const d = drinkById(id);
+      return {
+        id,
+        name: d?.name || id,
+        price: Number(d?.price || 0),
+        qty: Number(qty || 0),
+        lineTotal: Number(d?.price || 0) * Number(qty || 0),
+        img: d?.img || ""
+      };
+    });
+
+    held.unshift({
+      time: nowStamp(),
+      note: orderNote || "",
+      total: currentTotal(),
+      lines
+    });
+
+    // Keep the most recent 10 held orders
+    while(held.length > 10) held.pop();
+
+    saveHeld(held);
+
+    clearOrder();     // clears + re-renders current order
+    renderHeld();     // show chips immediately
+  }
+
+  function recallHeld(index){
+    const held = loadHeld();
+    const item = held[index];
+    if(!item) return;
+
+    if(Object.keys(currentOrder).length > 0){
+      const ok = confirm("Replace current order with this held order?");
+      if(!ok) return;
+    }
+
+    currentOrder = {};
+    (item.lines || []).forEach(l => {
+      currentOrder[l.id] = (currentOrder[l.id] || 0) + Number(l.qty || 0);
+    });
+    orderNote = item.note || "";
+
+    held.splice(index, 1);
+    saveHeld(held);
+
+    renderCurrentOrder();
+    renderHeld();
+  }
+
+  function deleteHeld(index){
+    const held = loadHeld();
+    held.splice(index, 1);
+    saveHeld(held);
+    renderHeld();
+  }
+
+  function renderHeld(){
+    const wrap = document.getElementById("held-wrap");
+    const list = document.getElementById("held-list");
+    if(!wrap || !list) return;
+
+    const held = loadHeld();
+
+    if(held.length === 0){
+      wrap.style.display = "none";
+      list.innerHTML = "";
+      return;
+    }
+
+    wrap.style.display = "block";
+    list.innerHTML = "";
+
+    held.forEach((h, idx) => {
+      const itemsCount = (h.lines || []).reduce((s,l) => s + Number(l.qty || 0), 0);
+      const t = new Date(h.time);
+      const timeStr = isNaN(t.getTime()) ? "" : t.toLocaleTimeString(undefined, { hour:"2-digit", minute:"2-digit" });
+
+      const chip = document.createElement("div");
+      chip.className = "held-chip";
+      chip.innerHTML = `
+        <div>
+          Hold ${idx + 1} · ${money(h.total)}
+          <div class="sub">${itemsCount} items · ${timeStr}${h.note ? " · " + escapeHtml(h.note) : ""}</div>
+        </div>
+        <button type="button" class="x" title="Delete held order">×</button>
+      `;
+
+      chip.addEventListener("click", () => recallHeld(idx));
+      chip.querySelector(".x").addEventListener("click", (e) => {
+        e.stopPropagation();
+        deleteHeld(idx);
+      });
+
+      list.appendChild(chip);
+    });
+  }
+
   // ====== RENDER: CURRENT ORDER ======
   function renderCurrentOrder(){
     const tbody = document.getElementById("order-lines");
     const entries = Object.entries(currentOrder);
 
     const completeBtn = document.getElementById("btn-complete");
+    const holdBtn = document.getElementById("btn-hold");
     const noteEl = document.getElementById("order-note");
 
-    function setCompleteEnabled(enabled){
-      if(enabled){
-        completeBtn.disabled = false;
-        completeBtn.removeAttribute("disabled");
-      } else {
-        completeBtn.disabled = true;
-        completeBtn.setAttribute("disabled", "disabled");
+    function setActionEnabled(enabled){
+      if(completeBtn){
+        if(enabled){
+          completeBtn.disabled = false;
+          completeBtn.removeAttribute("disabled");
+        } else {
+          completeBtn.disabled = true;
+          completeBtn.setAttribute("disabled", "disabled");
+        }
+      }
+      if(holdBtn){
+        if(enabled){
+          holdBtn.disabled = false;
+          holdBtn.removeAttribute("disabled");
+        } else {
+          holdBtn.disabled = true;
+          holdBtn.setAttribute("disabled", "disabled");
+        }
       }
     }
 
-    if(entries.length === 0){
+    // keep held tray updated
+    renderHeld();
+if(entries.length === 0){
       tbody.innerHTML = `<tr><td colspan="3" class="muted">No items yet.</td></tr>`;
       document.getElementById("order-total").textContent = money(0);
-      setCompleteEnabled(false);
+      setActionEnabled(false);
       noteEl.style.display = "none";
       return;
     }
@@ -1117,7 +1296,7 @@ btn.innerHTML = `
       });
 
     document.getElementById("order-total").textContent = money(currentTotal());
-    setCompleteEnabled(true);
+    setActionEnabled(true);
 
     if(orderNote){
       noteEl.style.display = "block";
@@ -1328,6 +1507,7 @@ document.getElementById("variant-close").addEventListener("click", () => {
 
   document.getElementById("btn-clear-order").addEventListener("click", clearOrder);
   document.getElementById("btn-undo").addEventListener("click", undo);
+  document.getElementById("btn-hold").addEventListener("click", holdCurrentOrder);
   document.getElementById("btn-complete").addEventListener("click", completeOrderWithPay);
 
   document.getElementById("btn-export").addEventListener("click", exportCSV);
@@ -1348,12 +1528,14 @@ document.getElementById("variant-close").addEventListener("click", () => {
   // ====== INIT ======
   renderMenu();
   renderCurrentOrder();
+  renderHeld();
   renderOrders();
   renderSummary();
   updateStatusBar();
 </script>
 </body>
 </html>
+
 
 
 
