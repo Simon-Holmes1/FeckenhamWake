@@ -264,6 +264,42 @@
     #order-detail .row{ gap: 10px; }
     #order-detail table th{ opacity: .85; }
     #order-detail table td{ padding: 10px 8px; }
+
+/* Admin modal */
+#admin-modal{
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.65);
+  z-index: 10001;
+}
+#admin-modal .admin-card{
+  width: min(900px, 94vw);
+  border-radius: 22px;
+  padding: 18px;
+  background: rgba(18,18,26,.96);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 24px 60px rgba(0,0,0,.55);
+}
+#admin-modal .admin-title{
+  font-weight: 950;
+  font-size: 22px;
+  margin-bottom: 4px;
+}
+#admin-modal input{
+  width: 100%;
+  padding: 10px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: rgba(245,247,255,.95);
+  font-weight: 700;
+  outline: none;
+}
+#admin-modal input::placeholder{ color: rgba(245,247,255,.45); }
+    
   </style>
 </head>
 
@@ -887,4 +923,5 @@
 </script>
 </body>
 </html>
+
 
