@@ -490,9 +490,11 @@
     <div class="spacer"></div>
 
     <div class="row" style="gap:10px; flex-wrap:wrap;">
-      <button type="button" class="btn primary" id="admin-add">+ Add drink</button>
-      <button type="button" class="btn" id="admin-save">Save changes</button>
-      <button type="button" class="btn danger" id="admin-reset">Reset to default</button>
+<button type="button" class="btn primary" id="admin-add">+ Add drink</button>
+<button type="button" class="btn" id="admin-save">Save changes</button>
+<button type="button" class="btn" id="admin-export">Export menu</button>
+<button type="button" class="btn" id="admin-import">Import menu</button>
+<button type="button" class="btn danger" id="admin-reset">Reset to default</button>
     </div>
 
     <div class="spacer"></div>
@@ -518,6 +520,69 @@
 </div>
   
 <script>
+
+  function exportMenu(){
+  // Use the live saved menu (not the draft)
+  const payload = JSON.stringify(DRINKS, null, 2);
+
+  // If supported, copy to clipboard (works on most modern browsers)
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(payload)
+      .then(() => alert("Menu copied to clipboard.\n\nNow paste it into Import on your other device."))
+      .catch(() => prompt("Copy this menu JSON:", payload));
+  } else {
+    // Fallback: show prompt so you can copy manually
+    prompt("Copy this menu JSON:", payload);
+  }
+}
+
+function importMenu(){
+  const pasted = prompt("Paste menu JSON here:");
+  if(pasted === null) return;
+
+  let parsed;
+  try{
+    parsed = JSON.parse(pasted);
+  } catch {
+    alert("That didn’t look like valid JSON.");
+    return;
+  }
+
+  if(!Array.isArray(parsed)){
+    alert("Menu JSON must be an array of drinks.");
+    return;
+  }
+
+  const cleaned = parsed.map(d => ({
+    id: String(d.id || "").trim(),
+    name: String(d.name || "").trim(),
+    price: Number(d.price || 0)
+  }));
+
+  const err = validateMenu(cleaned);
+  if(err){
+    alert("Import failed: " + err);
+    return;
+  }
+
+  saveMenu(cleaned);
+
+  // Refresh everything
+  renderMenu();
+  renderCurrentOrder();
+  renderOrders();
+  renderSummary();
+  updateStatusBar();
+
+  // If Admin is open, refresh the draft too
+  if(document.getElementById("admin-modal").style.display !== "none"){
+    adminDraft = DRINKS.map(d => ({...d}));
+    renderAdminTable();
+  }
+
+  alert("Menu imported successfully.");
+}
+
   
 let adminDraft = [];
 
@@ -1078,6 +1143,10 @@ document.getElementById("admin-reset").addEventListener("click", () => {
   }
 
   // ====== WIRING ======
+
+  document.getElementById("admin-export").addEventListener("click", exportMenu);
+  document.getElementById("admin-import").addEventListener("click", importMenu);
+
   document.getElementById("tab-order").addEventListener("click", () => switchTab("order"));
   document.getElementById("tab-orders").addEventListener("click", () => { renderOrders(); switchTab("orders"); });
   document.getElementById("tab-summary").addEventListener("click", () => { renderSummary(); switchTab("summary"); });
@@ -1110,6 +1179,7 @@ document.getElementById("admin-reset").addEventListener("click", () => {
 </script>
 </body>
 </html>
+
 
 
 
