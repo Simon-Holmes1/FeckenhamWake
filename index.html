@@ -4,6 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Feckenham Wake Bar</title>
+  <div id="status-bar" class="statusbar">
+  <div class="status-pill">Orders: <span id="sb-orders">0</span></div>
+  <div class="status-pill">Revenue: <span id="sb-revenue">£0.00</span></div>
+  <div class="status-pill">Cash: <span id="sb-cash">£0.00</span></div>
+  <div class="status-pill">Card: <span id="sb-card">£0.00</span></div>
+  <div class="status-pill">Last: <span id="sb-last">—</span></div>
+</div>
   <style>
     :root { font-family: -apple-system, system-ui, Segoe UI, Roboto, Courier, monospace ; }
     body { margin: 0; background: #f6f6f7; color: #111; }
@@ -301,6 +308,29 @@ header + .tabs{
 #order-detail table th{ opacity: .8; }
 #order-detail table td{ padding: 10px 8px; }
 
+/* Status bar */
+.statusbar{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 10px;
+  padding: 0 12px 12px 12px;
+}
+
+.status-pill{
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.10);
+  color: rgba(245,247,255,.92);
+}
+
+.status-pill span{
+  font-weight: 900;
+}
+
   </style>
 </head>
 
@@ -412,6 +442,7 @@ header + .tabs{
           <div class="row" style="gap:8px;">
             <button class="btn" id="btn-export">Export CSV</button>
             <button class="btn danger" id="btn-clear-all">Clear Day</button>
+            updateStatusBar();
           </div>
         </div>
 
@@ -503,11 +534,45 @@ header + .tabs{
 
   totalEl.textContent = money(total);
   overlay.style.display = "flex";
+  
+  function updateStatusBar(){
+  const orders = loadOrders();
+
+  let revenue = 0;
+  let cashTotal = 0;
+  let cardTotal = 0;
+
+  for(const o of orders){
+    const t = Number(o.total || 0);
+    revenue += t;
+    if(o.payment === "cash") cashTotal += t;
+    if(o.payment === "card") cardTotal += t;
+  }
+
+  const last = orders[0]?.time || null;
+
+  const elOrders = document.getElementById("sb-orders");
+  const elRevenue = document.getElementById("sb-revenue");
+  const elCash = document.getElementById("sb-cash");
+  const elCard = document.getElementById("sb-card");
+  const elLast = document.getElementById("sb-last");
+
+  if(elOrders) elOrders.textContent = String(orders.length);
+  if(elRevenue) elRevenue.textContent = money(revenue);
+  if(elCash) elCash.textContent = money(cashTotal);
+  if(elCard) elCard.textContent = money(cardTotal);
+
+  if(elLast){
+    // If you already have a pretty time formatter, feel free to swap it in.
+    // Otherwise, just display the saved stamp.
+    elLast.textContent = last ? last : "—";
+  }
+}
 
   // Hide after a short moment
   setTimeout(() => {
     overlay.style.display = "none";
-  }, 1800);
+  }, 1500);
 }
 
 // --- Payment modal state ---
@@ -941,6 +1006,7 @@ async function completeOrderWithPay(){
   clearOrder();
   renderOrders();
   renderSummary();
+  updateStatusBar();
 
   switchTab("order");
   showOrderCompleteOverlay(total);
@@ -950,6 +1016,7 @@ async function completeOrderWithPay(){
   renderCurrentOrder();
   renderOrders();
   renderSummary();
+  updateStatusBar();
 </script>
 <!-- Order complete overlay -->
 <div id="order-complete-overlay" style="display:none;">
