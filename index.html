@@ -316,6 +316,17 @@
   /* if a drink has no img, still keep layout consistent */
   background: rgba(255,255,255,.04);
 }
+
+/* Variants modal uses same styling as other modals */
+#variant-modal{
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.65);
+  z-index: 10002;
+}
    
   </style>
 </head>
@@ -535,6 +546,23 @@
     </div>
   </div>
 </div>
+
+  <!-- Variants modal -->
+<div id="variant-modal" style="display:none;">
+  <div class="admin-card" style="max-width:520px;">
+    <div class="row">
+      <div>
+        <div class="admin-title" id="variant-title">Choose option</div>
+        <div class="muted">Tap one to add to the order.</div>
+      </div>
+      <button type="button" class="btn" id="variant-close">Close</button>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div id="variant-list" class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));"></div>
+  </div>
+</div>
   
 <script>
 
@@ -697,11 +725,35 @@ function applyAdminMenu(){
     { id: "mixer",   name: "Mixer",         price: 1.75 },
     { id: "soft",    name: "Soft Drink",    price: 1.50 },
     { id: "deposit", name: "Glass Deposit", price: 1.00 },
+{ id:"poretti-half", name:"Poretti (Half)", price: 3.50, img:"img/poretti.png" },
+{ id:"poretti-pint", name:"Poretti (Pint)", price: 4.75, img:"img/poretti.png" },
+
+{ id:"wine-small",  name:"Wine (Small)",  price: 4.50, img:"img/wine.png" },
+{ id:"wine-medium", name:"Wine (Medium)", price: 6.00, img:"img/wine.png" },
+{ id:"wine-large",  name:"Wine (Large)",  price: 7.50, img:"img/wine.png" },
+{ id:"wine-bottle", name:"Wine (Bottle)", price: 20.00, img:"img/wine.png" },
+   
   ]; 
   const KEY_MENU = "popupbar_menu_override_v1";
 const ADMIN_PIN = "1234"; // CHANGE THIS PIN
 
 let DRINKS = loadMenu();
+
+// Sub-menu groups: clicking a group opens options (which are normal DRINKS ids)
+const VARIANT_GROUPS = [
+  {
+    id: "poretti",
+    label: "Poretti",
+    img: "img/poretti.png",          // optional (can remove)
+    options: ["poretti-half", "poretti-pint"]
+  },
+  {
+    id: "wine",
+    label: "Wine",
+    img: "img/wine.png",             // optional
+    options: ["wine-small", "wine-medium", "wine-large", "wine-bottle"]
+  }
+];
 
 function loadMenu(){
   try{
@@ -734,6 +786,40 @@ function saveMenu(menuArr){
   let orderNote = "";
 
   // ====== HELPERS ======
+
+function findDrink(id){
+  return DRINKS.find(d => d.id === id);
+}
+
+function openVariantModal(group){
+  const modal = document.getElementById("variant-modal");
+  const title = document.getElementById("variant-title");
+  const list = document.getElementById("variant-list");
+
+  title.textContent = group.label + " options";
+  list.innerHTML = "";
+
+  group.options.forEach(drinkId => {
+    const d = findDrink(drinkId);
+    if(!d) return;
+
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "drink";
+    const thumb = d.img ? `<img class="thumb" src="${escapeHtml(d.img)}" alt="">` : "";
+    b.innerHTML = `${thumb}<div class="name">${escapeHtml(d.name)}</div><div class="price">${money(d.price)}</div>`;
+
+    b.addEventListener("click", () => {
+      addToOrder(d.id, 1);
+      modal.style.display = "none";
+    });
+
+    list.appendChild(b);
+  });
+
+  modal.style.display = "flex";
+}
+ 
   const money = (n) => "£" + (Math.round(Number(n || 0) * 100) / 100).toFixed(2);
   const nowStamp = () => new Date().toISOString();
 
@@ -866,7 +952,31 @@ document.getElementById("admin-reset").addEventListener("click", () => {
     const grid = document.getElementById("drink-grid");
     grid.innerHTML = "";
 
+// Build a set of drinks that are “hidden” because they’re accessed via a group popup
+const hidden = new Set();
+VARIANT_GROUPS.forEach(g => g.options.forEach(id => hidden.add(id)));
+
+// Render group buttons first
+VARIANT_GROUPS.forEach(g => {
+  const btn = document.createElement("button");
+  btn.className = "drink";
+  btn.type = "button";
+
+  const thumb = g.img ? `<img class="thumb" src="${escapeHtml(g.img)}" alt="">` : "";
+  btn.innerHTML = `${thumb}<div class="name">${escapeHtml(g.label)}</div><div class="price">Tap for sizes</div>`;
+
+  btn.addEventListener("click", (e) => {
+    // flash feedback
+    btn.classList.add("flash");
+    setTimeout(() => btn.classList.remove("flash"), 180);
+    openVariantModal(g);
+  });
+
+  grid.appendChild(btn);
+});    
+
     DRINKS.forEach(d => {
+      if(hidden.has(d.id)) return; // don’t show variant items as separate buttons
       const btn = document.createElement("button");
       btn.className = "drink";
       btn.type = "button";
@@ -1168,6 +1278,10 @@ btn.innerHTML = `
 
   // ====== WIRING ======
 
+document.getElementById("variant-close").addEventListener("click", () => {
+  document.getElementById("variant-modal").style.display = "none";
+});
+
   document.getElementById("admin-export").addEventListener("click", exportMenu);
   document.getElementById("admin-import").addEventListener("click", importMenu);
 
@@ -1203,6 +1317,7 @@ btn.innerHTML = `
 </script>
 </body>
 </html>
+
 
 
 
