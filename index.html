@@ -299,7 +299,24 @@
   outline: none;
 }
 #admin-modal input::placeholder{ color: rgba(245,247,255,.45); }
-    
+
+/* Drink thumbnails */
+.thumb{
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  object-fit: cover;
+  margin: 0 auto 10px auto;
+  display: block;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+}
+
+.thumb.placeholder{
+  /* if a drink has no img, still keep layout consistent */
+  background: rgba(255,255,255,.04);
+}
+   
   </style>
 </head>
 
@@ -853,7 +870,14 @@ document.getElementById("admin-reset").addEventListener("click", () => {
       const btn = document.createElement("button");
       btn.className = "drink";
       btn.type = "button";
-      btn.innerHTML = `<div class="name">${escapeHtml(d.name)}</div><div class="price">${money(d.price)}</div>`;
+      const thumb = d.img ? `<img class="thumb" src="${escapeHtml(d.img)}" alt="" loading="lazy">` : `<div class="thumb placeholder"></div>`;
+
+btn.innerHTML = `
+  ${thumb}
+  <div class="name">${escapeHtml(d.name)}</div>
+  <div class="price">${money(d.price)}</div>
+`;
+
 
       btn.addEventListener("click", (e) => {
         // flash + ripple origin
@@ -1179,6 +1203,7 @@ document.getElementById("admin-reset").addEventListener("click", () => {
 </script>
 </body>
 </html>
+
 
 
 
