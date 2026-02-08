@@ -838,6 +838,7 @@ function saveMenu(menuArr){
 
   // ====== STORAGE KEYS ======
   const KEY_ORDERS = "popupbar_orders_v2"; // bumped to v2 for clean schema
+  const KEY_HELD = "popupbar_held_orders_v1";
 
   // ====== STATE ======
   let currentOrder = {};  // { drinkId: qty }
@@ -905,6 +906,124 @@ function openVariantModal(group){
   function saveOrders(orders){
     localStorage.setItem(KEY_ORDERS, JSON.stringify(orders));
   }
+
+  function loadHeld(){
+  try { return JSON.parse(localStorage.getItem(KEY_HELD) || "[]"); }
+  catch { return []; }
+}
+  
+function holdCurrentOrder(){
+  const entries = Object.entries(currentOrder);
+  if(entries.length === 0) return;
+
+  const held = loadHeld();
+
+  const lines = entries.map(([id, qty]) => {
+    const d = drinkById(id);
+    return {
+      id,
+      name: d?.name || id,
+      price: Number(d?.price || 0),
+      qty: Number(qty || 0),
+      lineTotal: Number(d?.price || 0) * Number(qty || 0),
+      img: d?.img || ""
+    };
+  });
+
+  const heldOrder = {
+    time: new Date().toISOString(),
+    note: orderNote || "",
+    total: currentTotal(),
+    lines
+  };
+
+  held.unshift(heldOrder);
+
+  // keep last 10 held orders
+  while(held.length > 10) held.pop();
+
+  saveHeld(held);
+
+  clearOrder();      // clears current order + re-renders
+  renderHeld();      // update tray immediately
+}
+
+function recallHeld(index){
+  const held = loadHeld();
+  const item = held[index];
+  if(!item) return;
+
+  if(Object.keys(currentOrder).length > 0){
+    const ok = confirm("Replace current order with this held order?");
+    if(!ok) return;
+  }
+
+  currentOrder = {};
+  (item.lines || []).forEach(l => {
+    currentOrder[l.id] = (currentOrder[l.id] || 0) + Number(l.qty || 0);
+  });
+  orderNote = item.note || "";
+
+  held.splice(index, 1);
+  saveHeld(held);
+
+  renderCurrentOrder();
+  renderHeld();
+}
+
+function deleteHeld(index){
+  const held = loadHeld();
+  held.splice(index, 1);
+  saveHeld(held);
+  renderHeld();
+}
+
+function renderHeld(){
+  const wrap = document.getElementById("held-wrap");
+  const list = document.getElementById("held-list");
+  if(!wrap || !list) return;
+
+  const held = loadHeld();
+
+  if(held.length === 0){
+    wrap.style.display = "none";
+    list.innerHTML = "";
+    return;
+  }
+
+  wrap.style.display = "block";
+  list.innerHTML = "";
+
+  held.forEach((h, idx) => {
+    const itemsCount = (h.lines || []).reduce((s,l) => s + Number(l.qty || 0), 0);
+    const t = new Date(h.time);
+    const timeStr = isNaN(t.getTime()) ? "" : t.toLocaleTimeString(undefined, { hour:"2-digit", minute:"2-digit" });
+
+    const chip = document.createElement("div");
+    chip.className = "held-chip";
+    chip.innerHTML = `
+      <div>
+        Hold ${idx + 1} · ${money(h.total)}
+        <div class="sub">${itemsCount} items · ${timeStr}${h.note ? " · " + escapeHtml(h.note) : ""}</div>
+      </div>
+      <button type="button" class="x" title="Delete held order">×</button>
+    `;
+
+    chip.addEventListener("click", () => recallHeld(idx));
+    chip.querySelector(".x").addEventListener("click", (e) => {
+      e.stopPropagation();
+      deleteHeld(idx);
+    });
+
+    list.appendChild(chip);
+  });
+}
+
+  
+
+function saveHeld(arr){
+  localStorage.setItem(KEY_HELD, JSON.stringify(arr));
+}
 
   function escapeHtml(s){
     return String(s)
@@ -1399,6 +1518,7 @@ document.getElementById("variant-close").addEventListener("click", () => {
 </script>
 </body>
 </html>
+
 
 
 
