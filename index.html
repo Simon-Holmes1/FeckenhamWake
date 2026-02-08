@@ -945,7 +945,8 @@ function holdCurrentOrder(){
   saveHeld(held);
 
   clearOrder();      // clears current order + re-renders
-  renderHeld();      // update tray immediately
+  if (typeof renderHeld === "function") renderHeld();
+      // update tray immediately
 }
 
 function recallHeld(index){
@@ -968,14 +969,14 @@ function recallHeld(index){
   saveHeld(held);
 
   renderCurrentOrder();
-  renderHeld();
+  if (typeof renderHeld === "function") renderHeld();
 }
 
 function deleteHeld(index){
   const held = loadHeld();
   held.splice(index, 1);
   saveHeld(held);
-  renderHeld();
+  if (typeof renderHeld === "function") renderHeld();
 }
 
 function renderHeld(){
@@ -1480,7 +1481,9 @@ btn.innerHTML = `
 
   // ====== WIRING ======
 
-document.getElementById("btn-hold").addEventListener("click", holdCurrentOrder);
+const holdBtnEl = document.getElementById("btn-hold");
+if (holdBtnEl) holdBtnEl.addEventListener("click", holdCurrentOrder);
+
   
   document.getElementById("variant-modal").addEventListener("click", (e) => {
   if(e.target.id === "variant-modal") e.target.style.display = "none";
@@ -1522,11 +1525,13 @@ document.getElementById("variant-close").addEventListener("click", () => {
   renderOrders();
   renderSummary();
   updateStatusBar();
-  renderHeld();
+  if (typeof renderHeld === "function") renderHeld();
+
 
 </script>
 </body>
 </html>
+
 
 
 
