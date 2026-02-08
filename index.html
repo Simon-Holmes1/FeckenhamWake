@@ -1277,15 +1277,22 @@ btn.innerHTML = `
 
   // ====== CLEAR DAY ======
   function clearAll(){
-    if(confirm("Clear all completed orders for the day? This cannot be undone.")){
-      localStorage.removeItem(KEY_ORDERS);
-      clearOrder();
-      renderOrders();
-      renderSummary();
-      updateStatusBar();
-      switchTab("order");
-    }
+  const pin = prompt("Admin PIN required to clear the day:");
+  if(pin === null) return;
+  if(pin !== ADMIN_PIN){
+    alert("Wrong PIN");
+    return;
   }
+
+  if(confirm("Clear all completed orders for the day? This cannot be undone.")){
+    localStorage.removeItem(KEY_ORDERS);
+    clearOrder();
+    renderOrders();
+    renderSummary();
+    updateStatusBar();
+    switchTab("order");
+  }
+}
 
   // ====== TABS ======
   function switchTab(which){
@@ -1347,6 +1354,7 @@ document.getElementById("variant-close").addEventListener("click", () => {
 </script>
 </body>
 </html>
+
 
 
 
