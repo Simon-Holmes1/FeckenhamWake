@@ -4,354 +4,280 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Feckenham Wake Bar</title>
-  <div id="status-bar" class="statusbar">
-  <div class="status-pill">Orders: <span id="sb-orders">0</span></div>
-  <div class="status-pill">Revenue: <span id="sb-revenue">£0.00</span></div>
-  <div class="status-pill">Cash: <span id="sb-cash">£0.00</span></div>
-  <div class="status-pill">Card: <span id="sb-card">£0.00</span></div>
-  <div class="status-pill">Last: <span id="sb-last">—</span></div>
-</div>
+
   <style>
-    :root { font-family: -apple-system, system-ui, Segoe UI, Roboto, Courier, monospace ; }
-    body { margin: 0; background: #f6f6f7; color: #111; }
-    header { position: sticky; top: 0; background: #777; padding: 20px 20px; border-bottom: 1px solid #ddd; border-radius: px}
-    h1 { margin: 0; font-size: 25px; color: white; text-align: center; }
-    .tabs { display: flex; gap: 25px; padding: 25px 10px; background: white; border-bottom: 1px solid #ddd; }
-    .tab { flex: 1; padding: 15px; border-radius: 100px; border: 10px solid #ddd; background: #fafafa; font-weight: 600; cursor: pointer}
-    .tab.active { background: #fff; color: #111; border-color: #777; font-weight: 900; }
-    main { padding: 16px; max-width: 900px; margin: 0 auto; }
+    :root{
+      font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      --bg:#0b0b10;
+      --card:#12121a;
+      --card2:#161622;
+      --text:#f5f7ff;
+      --muted:#a8b0c3;
+      --border: rgba(255,255,255,.10);
+      --accent:#f59e0b;
+      --accent2:#ef4444;
+    }
 
-    .grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
-    @media (min-width: 760px){ .grid { grid-template-columns: repeat(4, minmax(0,1fr)); } }
+    html, body{
+      margin:0;
+      min-height:100%;
+      background: var(--bg);
+      color: var(--text);
+    }
 
-    .drink {
-      background: white; border:10px double #ddd; border-radius: 250px;
-      padding: 10px; text-align: center; cursor: pointer;
-      box-shadow: 0 1px 0 rgba(0,0,0,.03);
+    body{
+      /* subtle top glow (keeps it “pos”, not flashy) */
+      background:
+        radial-gradient(900px 600px at 20% 0%, rgba(245,158,11,.18), transparent 60%),
+        radial-gradient(900px 600px at 90% 10%, rgba(239,68,68,.16), transparent 55%),
+        var(--bg);
+    }
+
+    header{
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      padding: 16px 16px 10px 16px;
+      background: rgba(10,10,16,.90);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    h1{
+      margin: 0;
+      font-size: 22px;
+      font-weight: 900;
+      text-align: center;
+      letter-spacing: -0.02em;
+    }
+
+    .statusbar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      justify-content:center;
+      margin-top: 10px;
+    }
+    .status-pill{
+      font-size: 13px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      color: rgba(245,247,255,.92);
+      user-select:none;
+    }
+    .status-pill span{ font-weight: 900; }
+
+    .tabs{
+      display:flex;
+      gap:10px;
+      padding: 12px 12px 0 12px;
+      background: rgba(10,10,16,.90);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      position: sticky;
+      top: 76px; /* header height-ish; ok if slightly off */
+      z-index: 19;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .tab{
+      flex:1;
+      padding: 12px 10px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .tab.active{
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #111;
+      border: none;
+      font-weight: 900;
+    }
+
+    main{ padding: 16px; max-width: 980px; margin: 0 auto; background: transparent; }
+
+    .twoCol{ display:grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 900px){ .twoCol{ grid-template-columns: 1.1fr .9fr; } }
+
+    .panel{
+      background: linear-gradient(180deg, var(--card), var(--card2));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 16px 34px rgba(0,0,0,.45);
+    }
+
+    .row{ display:flex; justify-content:space-between; gap:10px; align-items:center; }
+    .muted{ color: var(--muted); font-size: 14px; }
+
+    .grid{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+    @media (min-width: 760px){ .grid{ grid-template-columns: repeat(3, minmax(0,1fr)); } }
+    @media (min-width: 1024px){ .grid{ grid-template-columns: repeat(4, minmax(0,1fr)); } }
+
+    .drink{
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      text-align: center;
+      cursor: pointer;
       user-select: none;
+      position: relative;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform .05s ease;
     }
-    .drink .name { font-weight: 600; text-align: center; }
-    .drink .price { color: #555; margin-top: 5px; }
+    .drink:active{ transform: scale(0.98); }
+    .drink .name{ font-size: 18px; font-weight: 850; line-height: 1.1; text-align: center; }
+    .drink .price{ font-size: 14px; color: var(--muted); text-align: center; margin-top: 6px; }
 
-    .panel { background: white; border:10px solid #777; border-radius: 25px; padding: 35px; margin-top: 10px; }
-    .row { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
-    .muted { color: #555; font-size: 15px; }
-
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 10px 8px; border-bottom: 1px solid #eee; text-align: left; }
-    th { font-size: 15px; text-transform: uppercase; letter-spacing: .05em; color: #111; }
-
-    .qtyControls { display: inline-flex; gap: 6px; align-items: center; }
-    .btn {
-      padding: 10px 12px; border-radius: 12px; border: 1px solid #ddd; background: #fff;
-      cursor: pointer; font-weight: 700;
+    /* tap flash + ripple */
+    .drink.flash{
+      outline: 3px solid rgba(245, 158, 11, 0.9);
+      box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.18);
     }
-    .btn.primary { background: #777; color: white; border-color: #111; }
-    .btn.danger { background: #fff; color: #b00020; border-color: #f0c7cf; }
-    .btn:disabled { opacity: .5; cursor: not-allowed; }
-    .bigTotal { font-size: 30px; font-weight: 700; }
-    .spacer { height: 10px; }
-    .twoCol { display: grid; grid-template-columns: 1fr; gap: 5px; }
-    @media (min-width: 900px){ .twoCol { grid-template-columns: 1.1fr .9fr; } }
-    /* === THEME 2: Dark POS === */
-:root{
-  --bg:#0b0b10;
-  --card:#12121a;
-  --card2:#161622;
-  --text:#f5f7ff;
-  --muted:#a8b0c3;
-  --border: rgba(255,255,255,.10);
-  --accent:#f59e0b;
-  --accent2:#ef4444;
-}
+    .drink::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: radial-gradient(circle at var(--rx, 50%) var(--ry, 50%), rgba(245,158,11,.35), transparent 55%);
+      opacity: 0;
+      transition: opacity 160ms ease;
+      pointer-events:none;
+    }
+    .drink.flash::after{ opacity: 1; }
 
-body{
-  background:
-    radial-gradient(900px 600px at 20% 0%, rgba(245,158,11,.20), transparent 60%),
-    radial-gradient(900px 600px at 90% 10%, rgba(239,68,68,.18), transparent 55%),
-    var(--bg);
-  color: var(--text);
-}
+    table{ width:100%; border-collapse: collapse; }
+    th, td{ padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,.08); text-align:left; }
+    th{ font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: rgba(245,247,255,.80); }
 
-header{
-  background: rgba(10,10,16,.86);
-  border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
+    .qtyControls{ display:inline-flex; gap:6px; align-items:center; }
 
-.panel{
-  background: linear-gradient(180deg, var(--card), var(--card2));
-  border: 1px solid var(--border);
-  box-shadow: 0 16px 34px rgba(0,0,0,.45);
-}
+    .btn{
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 800;
+      transition: transform .05s ease;
+    }
+    .btn:active{ transform: scale(0.98); }
+    .btn:disabled{ opacity: .5; cursor: not-allowed; }
 
-.tab{
-  background: rgba(255,255,255,.06);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: 14px;
-}
+    .btn.primary{
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #111;
+      border: none;
+    }
+    .btn.danger{
+      background: rgba(255,255,255,.04);
+      color: #ff6b6b;
+      border: 1px solid rgba(255,107,107,.35);
+    }
 
-.tab.active{
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  color: #111;
-  border: none;
-}
+    #btn-complete{
+      font-size: 16px;
+      padding: 14px 14px;
+      border-radius: 14px;
+    }
 
-.drink{
-  background: rgba(255,255,255,.06);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 16px;
-}
+    .bigTotal{ font-size: 42px; font-weight: 900; letter-spacing: -0.02em; }
+    .spacer{ height: 10px; }
 
-.drink .price, .muted{ color: var(--muted); }
+    /* Payment modal */
+    #pay-modal{
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.65);
+      z-index: 10000;
+    }
+    #pay-modal .pay-card{
+      width: min(520px, 92vw);
+      border-radius: 22px;
+      padding: 18px;
+      background: rgba(18,18,26,.96);
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 24px 60px rgba(0,0,0,.55);
+    }
+    #pay-modal .pay-title{
+      font-weight: 900;
+      font-size: 22px;
+      margin-bottom: 14px;
+    }
+    #pay-modal .pay-actions{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    #pay-modal .pay-actions .btn{
+      padding: 16px 14px;
+      font-size: 18px;
+      border-radius: 16px;
+    }
 
-.btn{
-  background: rgba(255,255,255,.06);
-  border: 1px solid var(--border);
-  color: var(--text);
-}
+    /* Order complete overlay */
+    #order-complete-overlay{
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.65);
+      z-index: 9999;
+    }
+    #order-complete-overlay .oco-card{
+      width: min(520px, 90vw);
+      border-radius: 22px;
+      padding: 22px 18px;
+      text-align: center;
+      background: rgba(18,18,26,.95);
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 24px 60px rgba(0,0,0,.55);
+    }
+    #order-complete-overlay .oco-title{
+      font-weight: 900;
+      font-size: 26px;
+      margin-bottom: 10px;
+    }
+    #order-complete-overlay .oco-total{
+      font-weight: 950;
+      font-size: 54px;
+      margin: 6px 0 10px 0;
+    }
+    #order-complete-overlay .oco-sub{
+      opacity: .8;
+      font-size: 14px;
+    }
 
-.btn.primary{
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  color: #111;
-  border: none;
-}
-
-.bigTotal{ font-size: 38px; font-weight: 900; }
-
-.drink{ padding: 18px; }
-.drink .name{ font-size: 18px; font-weight: 800; }
-.drink .price{ font-size: 14px; }
-@media (min-width: 760px){
-  .grid{ grid-template-columns: repeat(3, minmax(0,1fr)); }
-}
-#btn-complete{
-  font-size: 16px;
-  padding: 14px 14px;
-  border-radius: 14px;
-}.btn:active, .drink:active { transform: scale(0.98); }
-.btn, .drink { transition: transform .05s ease; }
-
-/* iPad-friendly menu sizing for ~12 drinks */
-.drink{
-  padding: 18px;
-  border-radius: 18px;
-}
-.drink .name{
-  font-size: 18px;
-  font-weight: 850;
-  line-height: 1.1;
-  text-align: center;
-}
-.drink .price{
-  font-size: 14px;
-  text-align: center;
-  margin-top: 6px;
-}
-
-/* Bigger tap targets: iPad portrait */
-@media (min-width: 760px){
-  .grid{ grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
-}
-
-/* iPad landscape: fit 4 across nicely */
-@media (min-width: 1024px){
-  .grid{ grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
-}
-
-/* POS feel */
-.drink:active, .btn:active{ transform: scale(0.98); }
-.drink, .btn{ transition: transform .05s ease; }
-.bigTotal{ font-size: 42px; font-weight: 900; }
-
-/* Order Complete overlay */
-#order-complete-overlay{
-  position: fixed;
-  inset: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,.65);
-  z-index: 9999;
-}
-
-#order-complete-overlay .oco-card{
-  width: min(520px, 90vw);
-  border-radius: 22px;
-  padding: 22px 18px;
-  text-align: center;
-  background: rgba(18,18,26,.95);
-  border: 1px solid rgba(255,255,255,.12);
-  box-shadow: 0 24px 60px rgba(0,0,0,.55);
-}
-
-#order-complete-overlay .oco-title{
-  font-weight: 900;
-  font-size: 26px;
-  margin-bottom: 10px;
-}
-
-#order-complete-overlay .oco-total{
-  font-weight: 950;
-  font-size: 54px;
-  margin: 6px 0 10px 0;
-}
-
-#order-complete-overlay .oco-sub{
-  opacity: .8;
-  font-size: 14px;
-}
-
-/* === FORCE DARK BACKDROP (tabs strip + bottom overscroll) === */
-html, body{
-  background: #0b0b10 !important;   /* solid black */
-  color: #f5f7ff;
-  min-height: 100%;
-}
-
-/* Remove any lingering gradient backgrounds from earlier themes */
-body{
-  background-image: none !important;
-}
-
-/* Tabs bar: make it match the rest of the dark UI */
-.tabs{
-  background: #0b0b10 !important;
-  border-bottom: 1px solid rgba(255,255,255,.10) !important;
-  box-shadow: none !important;
-}
-
-/* Main content area should not introduce a light “strip” */
-main{
-  background: transparent !important;
-}
-
-/* If anything wraps the tabs in a white container, this helps */
-header{
-  background: rgba(10,10,16,.86) !important;
-}
-
-/* Optional: if you still see a light bar directly under header */
-header + .tabs{
-  margin-top: 0 !important;
-}
-
-/* Tap feedback for drink buttons */
-.drink{
-  position: relative;
-  overflow: hidden;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.drink.flash{
-  outline: 3px solid rgba(245, 158, 11, 0.9); /* uses your Dark POS vibe */
-  box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.18);
-}
-
-/* quick ripple */
-.drink::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  background: radial-gradient(circle at var(--rx, 50%) var(--ry, 50%),
-              rgba(245,158,11,.35), transparent 55%);
-  opacity: 0;
-  transition: opacity 160ms ease;
-  pointer-events:none;
-}
-
-.drink.flash::after{ opacity: 1; }
-
-/* Payment modal */
-#pay-modal{
-  position: fixed;
-  inset: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,.65);
-  z-index: 10000;
-}
-
-#pay-modal .pay-card{
-  width: min(520px, 92vw);
-  border-radius: 22px;
-  padding: 18px;
-  background: rgba(18,18,26,.96);
-  border: 1px solid rgba(255,255,255,.12);
-  box-shadow: 0 24px 60px rgba(0,0,0,.55);
-}
-
-#pay-modal .pay-title{
-  font-weight: 900;
-  font-size: 22px;
-  margin-bottom: 14px;
-}
-
-#pay-modal .pay-actions{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-#pay-modal .pay-actions .btn{
-  padding: 16px 14px;
-  font-size: 18px;
-  border-radius: 16px;
-}
-
-#order-detail .row{ gap: 10px; }
-#order-detail h3, #order-detail h4{ margin: 0 0 10px 0; }
-#order-detail table th{ opacity: .8; }
-#order-detail table td{ padding: 10px 8px; }
-
-/* Status bar */
-.statusbar{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  margin-top: 10px;
-  padding: 0 12px 12px 12px;
-}
-
-.status-pill{
-  font-size: 13px;
-  padding: 8px 10px;
-  border-radius: 999px;
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.10);
-  color: rgba(245,247,255,.92);
-}
-
-.status-pill span{
-  font-weight: 900;
-}
-
+    /* Orders detail panel tweaks */
+    #order-detail .row{ gap: 10px; }
+    #order-detail table th{ opacity: .85; }
+    #order-detail table td{ padding: 10px 8px; }
   </style>
 </head>
 
-<!-- Payment method modal -->
-<div id="pay-modal" style="display:none;">
-  <div class="pay-card">
-    <div class="pay-title">Select payment</div>
-
-    <div class="pay-actions">
-      <button type="button" class="btn primary" id="pay-card">💳 Card</button>
-      <button type="button" class="btn primary" id="pay-cash">💷 Cash</button>
-    </div>
-
-    <button type="button" class="btn" id="pay-cancel" style="margin-top:12px; width:100%;">Cancel</button>
-  </div>
-</div>
-
 <body>
   <header>
-    <h1>Feckenham Wake Bar </h1>
-    <div class="muted".</div>
+    <h1>Feckenham Wake Bar</h1>
+
+    <div id="status-bar" class="statusbar">
+      <div class="status-pill">Orders: <span id="sb-orders">0</span></div>
+      <div class="status-pill">Revenue: <span id="sb-revenue">£0.00</span></div>
+      <div class="status-pill">Cash: <span id="sb-cash">£0.00</span></div>
+      <div class="status-pill">Card: <span id="sb-card">£0.00</span></div>
+      <div class="status-pill">Last: <span id="sb-last">—</span></div>
+    </div>
   </header>
 
   <div class="tabs">
@@ -368,8 +294,8 @@ header + .tabs{
           <div class="panel">
             <div class="row">
               <div>
-                <div style="font-weight:700;">Drinks Menu</div>
-                <div class="muted">Tap drinks to add to the current order. Click complete order to log it</div>
+                <div style="font-weight:900;">Drinks Menu</div>
+                <div class="muted">Tap drinks to add to the current order.</div>
               </div>
               <button class="btn" id="btn-edit-note" title="Optional order note">Add Note</button>
             </div>
@@ -381,12 +307,12 @@ header + .tabs{
         <div>
           <div class="panel">
             <div class="row">
-              <div style="font-weight:700;">Current Order</div>
+              <div style="font-weight:900;">Current Order</div>
               <button class="btn danger" id="btn-clear-order">Clear</button>
             </div>
             <div class="spacer"></div>
 
-            <div id="order-note" class="muted" style="display:none; margin-bottom: 5px;"></div>
+            <div id="order-note" class="muted" style="display:none; margin-bottom: 8px;"></div>
 
             <table>
               <thead>
@@ -412,19 +338,11 @@ header + .tabs{
 
             <div class="row" style="gap:8px;">
               <button class="btn" id="btn-undo">Undo</button>
-              <button
-  type="button"
-  class="btn primary"
-  id="btn-complete"
-  disabled
-  onclick="completeOrderSafe()"
->
-  Complete Order
-</button>
-    </div>
+              <button type="button" class="btn primary" id="btn-complete" disabled>Complete Order</button>
+            </div>
 
-            <div class="muted" style="margin-top:20px;">
-              All orders saved locally
+            <div class="muted" style="margin-top:14px;">
+              All orders saved locally.
             </div>
           </div>
         </div>
@@ -436,13 +354,12 @@ header + .tabs{
       <div class="panel">
         <div class="row">
           <div>
-            <div style="font-weight:800;">Orders</div>
+            <div style="font-weight:900;">Orders</div>
             <div class="muted">Tap an order to view items.</div>
           </div>
           <div class="row" style="gap:8px;">
             <button class="btn" id="btn-export">Export CSV</button>
             <button class="btn danger" id="btn-clear-all">Clear Day</button>
-            updateStatusBar();
           </div>
         </div>
 
@@ -469,7 +386,7 @@ header + .tabs{
       <div class="panel">
         <div class="row">
           <div>
-            <div style="font-weight:800;">Summary</div>
+            <div style="font-weight:900;">Summary</div>
             <div class="muted">Totals for all completed orders.</div>
           </div>
           <button class="btn" id="btn-refresh-summary">Refresh</button>
@@ -500,109 +417,58 @@ header + .tabs{
     </section>
   </main>
 
+  <!-- Payment method modal -->
+  <div id="pay-modal" aria-hidden="true">
+    <div class="pay-card">
+      <div class="pay-title">Select payment</div>
+
+      <div class="pay-actions">
+        <button type="button" class="btn primary" id="pay-card">💳 Card</button>
+        <button type="button" class="btn primary" id="pay-cash">💷 Cash</button>
+      </div>
+
+      <button type="button" class="btn" id="pay-cancel" style="margin-top:12px; width:100%;">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Order complete overlay -->
+  <div id="order-complete-overlay" aria-hidden="true">
+    <div class="oco-card">
+      <div class="oco-title">✅ Order Complete</div>
+      <div class="oco-total" id="oco-total">£0.00</div>
+      <div class="oco-sub">Ready for the next order…</div>
+    </div>
+  </div>
+
 <script>
   // ====== EDIT YOUR MENU HERE ======
   // Prices are in GBP.
   const DRINKS = [
-    { id: "lager", name: "Poretti", price: 4.75 },
-    { id: "cider", name: "Thatchers", price: 4.75 },
-    { id: "ipa", name: "IPA", price: 4.75 },
-    { id: "wine", name: "Wine (glass)", price: 4.50 },
-    { id: "prosecco", name: "Wine Bottle", price: 20.00 },
-    { id: "gin", name: "Gin", price: 3.50 },
-    { id: "vodka", name: "Mixer", price: 1.75 },
-    { id: "soft", name: "Soft Drink", price: 1.50 },
+    { id: "lager",   name: "Poretti",       price: 4.75 },
+    { id: "cider",   name: "Thatchers",     price: 4.75 },
+    { id: "ipa",     name: "IPA",           price: 4.75 },
+    { id: "wine",    name: "Wine (glass)",  price: 4.50 },
+    { id: "bottle",  name: "Wine Bottle",   price: 20.00 },
+    { id: "gin",     name: "Gin",           price: 3.50 },
+    { id: "mixer",   name: "Mixer",         price: 1.75 },
+    { id: "soft",    name: "Soft Drink",    price: 1.50 },
     { id: "deposit", name: "Glass Deposit", price: 1.00 },
   ];
 
   // ====== STORAGE KEYS ======
-  const KEY_ORDERS = "popupbar_orders_v1";
+  const KEY_ORDERS = "popupbar_orders_v2"; // bumped to v2 for clean schema
 
   // ====== STATE ======
-  let currentOrder = {};      // { drinkId: qty }
-  let actionStack = [];       // for Undo
+  let currentOrder = {};  // { drinkId: qty }
+  let actionStack = [];   // for Undo
   let orderNote = "";
 
   // ====== HELPERS ======
-  const money = (n) => "£" + (Math.round(n * 100) / 100).toFixed(2);
+  const money = (n) => "£" + (Math.round(Number(n || 0) * 100) / 100).toFixed(2);
   const nowStamp = () => new Date().toISOString();
-  
-  function showOrderCompleteOverlay(total){
-  const overlay = document.getElementById("order-complete-overlay");
-  const totalEl = document.getElementById("oco-total");
-  if(!overlay || !totalEl) return;
 
-  totalEl.textContent = money(total);
-  overlay.style.display = "flex";
-  
-  function updateStatusBar(){
-  const orders = loadOrders();
+  function drinkById(id){ return DRINKS.find(d => d.id === id); }
 
-  let revenue = 0;
-  let cashTotal = 0;
-  let cardTotal = 0;
-
-  for(const o of orders){
-    const t = Number(o.total || 0);
-    revenue += t;
-    if(o.payment === "cash") cashTotal += t;
-    if(o.payment === "card") cardTotal += t;
-  }
-
-  const last = orders[0]?.time || null;
-
-  const elOrders = document.getElementById("sb-orders");
-  const elRevenue = document.getElementById("sb-revenue");
-  const elCash = document.getElementById("sb-cash");
-  const elCard = document.getElementById("sb-card");
-  const elLast = document.getElementById("sb-last");
-
-  if(elOrders) elOrders.textContent = String(orders.length);
-  if(elRevenue) elRevenue.textContent = money(revenue);
-  if(elCash) elCash.textContent = money(cashTotal);
-  if(elCard) elCard.textContent = money(cardTotal);
-
-  if(elLast){
-    // If you already have a pretty time formatter, feel free to swap it in.
-    // Otherwise, just display the saved stamp.
-    elLast.textContent = last ? last : "—";
-  }
-}
-
-  // Hide after a short moment
-  setTimeout(() => {
-    overlay.style.display = "none";
-  }, 1500);
-}
-
-// --- Payment modal state ---
-let pendingOrderPaymentResolver = null;
-
-function openPaymentModal(){
-  const modal = document.getElementById("pay-modal");
-  if(modal) modal.style.display = "flex";
-}
-
-function closePaymentModal(){
-  const modal = document.getElementById("pay-modal");
-  if(modal) modal.style.display = "none";
-}
-
-// Returns a Promise that resolves to "cash" or "card", or null if cancelled
-function choosePaymentMethod(){
-  return new Promise((resolve) => {
-    pendingOrderPaymentResolver = resolve;
-    openPaymentModal();
-  });
-}
-
-function resolvePayment(method){
-  closePaymentModal();
-  if(pendingOrderPaymentResolver){
-    pendingOrderPaymentResolver(method);
-    pendingOrderPaymentResolver = null;
-  }
-}
   function loadOrders(){
     try { return JSON.parse(localStorage.getItem(KEY_ORDERS) || "[]"); }
     catch { return []; }
@@ -610,7 +476,21 @@ function resolvePayment(method){
   function saveOrders(orders){
     localStorage.setItem(KEY_ORDERS, JSON.stringify(orders));
   }
-  function drinkById(id){ return DRINKS.find(d => d.id === id); }
+
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;");
+  }
+
+  function csvSafe(s){
+    const str = String(s ?? "");
+    const needs = /[",\n]/.test(str);
+    const escaped = str.replaceAll('"', '""');
+    return needs ? `"${escaped}"` : escaped;
+  }
 
   function currentTotal(){
     return Object.entries(currentOrder).reduce((sum, [id, qty]) => {
@@ -620,41 +500,96 @@ function resolvePayment(method){
     }, 0);
   }
 
+  function formatLastTime(iso){
+    if(!iso) return "—";
+    const dt = new Date(iso);
+    if(Number.isNaN(dt.getTime())) return "—";
+    return dt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  }
+
+  // ====== STATUS BAR ======
+  function updateStatusBar(){
+    const orders = loadOrders();
+    let revenue = 0, cashTotal = 0, cardTotal = 0;
+
+    for(const o of orders){
+      const t = Number(o.total || 0);
+      revenue += t;
+      if(o.payment === "cash") cashTotal += t;
+      if(o.payment === "card") cardTotal += t;
+    }
+
+    document.getElementById("sb-orders").textContent = String(orders.length);
+    document.getElementById("sb-revenue").textContent = money(revenue);
+    document.getElementById("sb-cash").textContent = money(cashTotal);
+    document.getElementById("sb-card").textContent = money(cardTotal);
+    document.getElementById("sb-last").textContent = formatLastTime(orders[0]?.time);
+  }
+
+  // ====== OVERLAY ======
+  function showOrderCompleteOverlay(total){
+    const overlay = document.getElementById("order-complete-overlay");
+    const totalEl = document.getElementById("oco-total");
+    totalEl.textContent = money(total);
+    overlay.style.display = "flex";
+    setTimeout(() => { overlay.style.display = "none"; }, 1500);
+  }
+
+  // ====== PAYMENT MODAL ======
+  let pendingPayResolve = null;
+
+  function openPayModal(){ document.getElementById("pay-modal").style.display = "flex"; }
+  function closePayModal(){ document.getElementById("pay-modal").style.display = "none"; }
+
+  function choosePaymentMethod(){
+    return new Promise((resolve) => {
+      pendingPayResolve = resolve;
+      openPayModal();
+    });
+  }
+
+  function resolvePayment(method){
+    closePayModal();
+    if(pendingPayResolve){
+      pendingPayResolve(method);
+      pendingPayResolve = null;
+    }
+  }
+
   // ====== RENDER: MENU ======
   function renderMenu(){
     const grid = document.getElementById("drink-grid");
     grid.innerHTML = "";
+
     DRINKS.forEach(d => {
       const btn = document.createElement("button");
       btn.className = "drink";
-      btn.innerHTML = `<div class="name">${d.name}</div><div class="price">${money(d.price)}</div>`;
+      btn.type = "button";
+      btn.innerHTML = `<div class="name">${escapeHtml(d.name)}</div><div class="price">${money(d.price)}</div>`;
+
       btn.addEventListener("click", (e) => {
-  // flash highlight + ripple origin
-  const r = btn.getBoundingClientRect();
-  const x = ((e.clientX || (r.left + r.width/2)) - r.left) / r.width * 100;
-  const y = ((e.clientY || (r.top + r.height/2)) - r.top) / r.height * 100;
-  btn.style.setProperty("--rx", x + "%");
-  btn.style.setProperty("--ry", y + "%");
+        // flash + ripple origin
+        const r = btn.getBoundingClientRect();
+        const x = ((e.clientX || (r.left + r.width/2)) - r.left) / r.width * 100;
+        const y = ((e.clientY || (r.top + r.height/2)) - r.top) / r.height * 100;
+        btn.style.setProperty("--rx", x + "%");
+        btn.style.setProperty("--ry", y + "%");
 
-  btn.classList.add("flash");
-  setTimeout(() => btn.classList.remove("flash"), 180);
+        btn.classList.add("flash");
+        setTimeout(() => btn.classList.remove("flash"), 180);
 
-  addToOrder(d.id, 1);
-});
+        addToOrder(d.id, 1);
+      });
+
       grid.appendChild(btn);
     });
   }
+
   // ====== ORDER OPS ======
   function addToOrder(id, qty){
     currentOrder[id] = (currentOrder[id] || 0) + qty;
     if(currentOrder[id] <= 0) delete currentOrder[id];
     actionStack.push({ type: "add", id, qty });
-    renderCurrentOrder();
-  }
-
-  function setQty(id, qty){
-    if(qty <= 0) delete currentOrder[id];
-    else currentOrder[id] = qty;
     renderCurrentOrder();
   }
 
@@ -675,99 +610,67 @@ function resolvePayment(method){
     renderCurrentOrder();
   }
 
- function completeOrder(){
-    const lines = Object.entries(currentOrder).map(([id, qty]) => {
-      const d = drinkById(id);
-      return { id, name: d.name, price: d.price, qty, lineTotal: d.price * qty };
-    });
-    if(lines.length === 0) return;
+  // ====== RENDER: CURRENT ORDER ======
+  function renderCurrentOrder(){
+    const tbody = document.getElementById("order-lines");
+    const entries = Object.entries(currentOrder);
 
-    const order = {
-      time: nowStamp(),
-      note: orderNote || "",
-      total: currentTotal(),
-      lines
-    };
-
-    const orders = loadOrders();
-    orders.unshift(order);
-    saveOrders(orders);
-
-    const total = order.total;
-
-clearOrder();
-renderOrders();
-renderSummary();
-
-// Show confirmation and stay ready on Order screen
-switchTab("order");
-showOrderCompleteOverlay(total);
-  }
-// ====== RENDER: CURRENT ORDER ======
-function renderCurrentOrder(){
-  const tbody = document.getElementById("order-lines");
-  const entries = Object.entries(currentOrder);
-
-  function setCompleteEnabled(enabled){
-    const completeBtn = document.getElementById("btn-complete"); // re-fetch every time
-    if(!completeBtn) return;
-
-    if(enabled){
-      completeBtn.disabled = false;
-      completeBtn.removeAttribute("disabled"); // critical
-    } else {
-      completeBtn.disabled = true;
-      completeBtn.setAttribute("disabled", "disabled");
-    }
-  }
-
-  if(entries.length === 0){
-    tbody.innerHTML = `<tr><td colspan="3" class="muted">No items yet.</td></tr>`;
-    document.getElementById("order-total").textContent = money(0);
-    setCompleteEnabled(false);
-
+    const completeBtn = document.getElementById("btn-complete");
     const noteEl = document.getElementById("order-note");
-    if(noteEl) noteEl.style.display = "none";
-    return;
-  }
 
-  tbody.innerHTML = "";
-  entries
-    .sort((a,b) => drinkById(a[0]).name.localeCompare(drinkById(b[0]).name))
-    .forEach(([id, qty]) => {
-      const d = drinkById(id);
-      const tr = document.createElement("tr");
+    function setCompleteEnabled(enabled){
+      if(enabled){
+        completeBtn.disabled = false;
+        completeBtn.removeAttribute("disabled");
+      } else {
+        completeBtn.disabled = true;
+        completeBtn.setAttribute("disabled", "disabled");
+      }
+    }
 
-      const tdName = document.createElement("td");
-      tdName.innerHTML = `<div style="font-weight:700;">${d.name}</div><div class="muted">${money(d.price)} each</div>`;
+    if(entries.length === 0){
+      tbody.innerHTML = `<tr><td colspan="3" class="muted">No items yet.</td></tr>`;
+      document.getElementById("order-total").textContent = money(0);
+      setCompleteEnabled(false);
+      noteEl.style.display = "none";
+      return;
+    }
 
-      const tdQty = document.createElement("td");
-      tdQty.innerHTML = `
-        <div class="qtyControls">
-          <button type="button" class="btn" data-dec>-</button>
-          <div style="min-width:28px; text-align:center; font-weight:800;">${qty}</div>
-          <button type="button" class="btn" data-inc>+</button>
-        </div>
-      `;
+    tbody.innerHTML = "";
+    entries
+      .sort((a,b) => drinkById(a[0]).name.localeCompare(drinkById(b[0]).name))
+      .forEach(([id, qty]) => {
+        const d = drinkById(id);
+        const tr = document.createElement("tr");
 
-      tdQty.querySelector("[data-dec]").addEventListener("click", () => addToOrder(id, -1));
-      tdQty.querySelector("[data-inc]").addEventListener("click", () => addToOrder(id, 1));
+        const tdName = document.createElement("td");
+        tdName.innerHTML = `<div style="font-weight:800;">${escapeHtml(d.name)}</div><div class="muted">${money(d.price)} each</div>`;
 
-      const tdLine = document.createElement("td");
-      tdLine.style.fontWeight = "800";
-      tdLine.textContent = money(d.price * qty);
+        const tdQty = document.createElement("td");
+        tdQty.innerHTML = `
+          <div class="qtyControls">
+            <button type="button" class="btn" data-dec>-</button>
+            <div style="min-width:28px; text-align:center; font-weight:900;">${qty}</div>
+            <button type="button" class="btn" data-inc>+</button>
+          </div>
+        `;
 
-      tr.appendChild(tdName);
-      tr.appendChild(tdQty);
-      tr.appendChild(tdLine);
-      tbody.appendChild(tr);
-    });
+        tdQty.querySelector("[data-dec]").addEventListener("click", () => addToOrder(id, -1));
+        tdQty.querySelector("[data-inc]").addEventListener("click", () => addToOrder(id, 1));
 
-  document.getElementById("order-total").textContent = money(currentTotal());
-  setCompleteEnabled(true);
+        const tdLine = document.createElement("td");
+        tdLine.style.fontWeight = "900";
+        tdLine.textContent = money(d.price * qty);
 
-  const noteEl = document.getElementById("order-note");
-  if(noteEl){
+        tr.appendChild(tdName);
+        tr.appendChild(tdQty);
+        tr.appendChild(tdLine);
+        tbody.appendChild(tr);
+      });
+
+    document.getElementById("order-total").textContent = money(currentTotal());
+    setCompleteEnabled(true);
+
     if(orderNote){
       noteEl.style.display = "block";
       noteEl.textContent = "Note: " + orderNote;
@@ -775,7 +678,41 @@ function renderCurrentOrder(){
       noteEl.style.display = "none";
     }
   }
-}
+
+  // ====== COMPLETE ORDER (with payment) ======
+  async function completeOrderWithPay(){
+    const lines = Object.entries(currentOrder).map(([id, qty]) => {
+      const d = drinkById(id);
+      return { id, name: d.name, price: d.price, qty, lineTotal: d.price * qty };
+    });
+    if(lines.length === 0) return;
+
+    const payment = await choosePaymentMethod();
+    if(!payment) return; // cancelled
+
+    const total = currentTotal();
+
+    const order = {
+      time: nowStamp(),
+      note: orderNote || "",
+      total,
+      payment, // "cash" | "card"
+      lines
+    };
+
+    const orders = loadOrders();
+    orders.unshift(order);
+    saveOrders(orders);
+
+    clearOrder();
+    renderOrders();
+    renderSummary();
+
+    // Always show confirmation first; then update status bar
+    switchTab("order");
+    showOrderCompleteOverlay(total);
+    updateStatusBar();
+  }
 
   // ====== RENDER: ORDERS LIST ======
   function renderOrders(){
@@ -791,30 +728,32 @@ function renderCurrentOrder(){
     }
 
     tbody.innerHTML = "";
-    orders.forEach((o, idx) => {
+    orders.forEach((o) => {
       const dt = new Date(o.time);
       const timeStr = dt.toLocaleString(undefined, { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" });
-
-      const itemsCount = o.lines.reduce((s,l) => s + l.qty, 0);
+      const itemsCount = (o.lines || []).reduce((s,l) => s + (l.qty || 0), 0);
+      const payLabel = o.payment === "cash" ? "Cash" : (o.payment === "card" ? "Card" : "");
 
       const tr = document.createElement("tr");
       tr.style.cursor = "pointer";
-      tr.innerHTML = `<td>${timeStr}</td><td>${itemsCount}</td><td style="font-weight:800;">${money(o.total)}</td>`;
+      tr.innerHTML = `<td>${timeStr}</td><td>${itemsCount}</td><td style="font-weight:900;">${money(o.total)} <span class="muted">(${payLabel})</span></td>`;
+
       tr.addEventListener("click", () => {
-        const linesHtml = o.lines
-          .map(l => `<tr><td>${l.name}</td><td>${l.qty}</td><td>${money(l.lineTotal)}</td></tr>`)
+        const linesHtml = (o.lines || [])
+          .map(l => `<tr><td>${escapeHtml(l.name)}</td><td>${l.qty}</td><td>${money(l.lineTotal)}</td></tr>`)
           .join("");
 
         detail.innerHTML = `
-          <div style="font-weight:800; margin-bottom:8px;">Order Detail</div>
+          <div style="font-weight:900; margin-bottom:8px;">Order Detail</div>
           ${o.note ? `<div class="muted" style="margin-bottom:10px;">Note: ${escapeHtml(o.note)}</div>` : ""}
+          <div class="muted" style="margin-bottom:10px;">Payment: ${escapeHtml(payLabel || "—")}</div>
           <table>
             <thead><tr><th>Item</th><th style="width:120px;">Qty</th><th style="width:140px;">Line</th></tr></thead>
             <tbody>${linesHtml}</tbody>
           </table>
           <div class="row" style="margin-top:10px;">
             <div class="muted">Order Total</div>
-            <div style="font-weight:900; font-size:18px;">${money(o.total)}</div>
+            <div style="font-weight:950; font-size:18px;">${money(o.total)}</div>
           </div>
         `;
         detail.style.display = "block";
@@ -830,7 +769,6 @@ function renderCurrentOrder(){
     const revenue = orders.reduce((s,o) => s + (o.total || 0), 0);
     document.getElementById("summary-revenue").textContent = money(revenue);
 
-    // aggregate by drink id
     const agg = {}; // {id: {name, qty, sales}}
     orders.forEach(o => {
       (o.lines || []).forEach(l => {
@@ -849,28 +787,29 @@ function renderCurrentOrder(){
     }
 
     tbody.innerHTML = rows.map(r =>
-      `<tr><td>${escapeHtml(r.name)}</td><td>${r.qty}</td><td style="font-weight:800;">${money(r.sales)}</td></tr>`
+      `<tr><td>${escapeHtml(r.name)}</td><td>${r.qty}</td><td style="font-weight:900;">${money(r.sales)}</td></tr>`
     ).join("");
   }
 
   // ====== EXPORT ======
   function exportCSV(){
     const orders = loadOrders();
-    // Order-level CSV plus line-level rows (easier for spreadsheet pivoting)
-    const headers = ["order_time","order_note","order_total","drink_id","drink_name","qty","unit_price","line_total"];
+    // Order-level CSV plus line-level rows
+    const headers = ["order_time","payment","order_note","order_total","drink_id","drink_name","qty","unit_price","line_total"];
     const lines = [headers.join(",")];
 
     orders.slice().reverse().forEach(o => {
       (o.lines || []).forEach(l => {
         const row = [
           csvSafe(o.time),
+          csvSafe(o.payment || ""),
           csvSafe(o.note || ""),
-          o.total.toFixed(2),
+          Number(o.total || 0).toFixed(2),
           csvSafe(l.id),
           csvSafe(l.name),
           l.qty,
-          l.price.toFixed(2),
-          l.lineTotal.toFixed(2)
+          Number(l.price || 0).toFixed(2),
+          Number(l.lineTotal || 0).toFixed(2)
         ];
         lines.push(row.join(","));
       });
@@ -888,25 +827,14 @@ function renderCurrentOrder(){
     URL.revokeObjectURL(url);
   }
 
-  function csvSafe(s){
-    const str = String(s ?? "");
-    // Escape quotes, wrap in quotes if needed
-    const needs = /[",\n]/.test(str);
-    const escaped = str.replaceAll('"', '""');
-    return needs ? `"${escaped}"` : escaped;
-  }
-
-  function escapeHtml(s){
-    return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
-  }
-
-  // ====== CLEAR ALL ======
+  // ====== CLEAR DAY ======
   function clearAll(){
     if(confirm("Clear all completed orders for the day? This cannot be undone.")){
       localStorage.removeItem(KEY_ORDERS);
       clearOrder();
       renderOrders();
       renderSummary();
+      updateStatusBar();
       switchTab("order");
     }
   }
@@ -937,95 +865,25 @@ function renderCurrentOrder(){
 
   document.getElementById("btn-export").addEventListener("click", exportCSV);
   document.getElementById("btn-clear-all").addEventListener("click", clearAll);
-  document.getElementById("btn-refresh-summary").addEventListener("click", renderSummary);
-  
+  document.getElementById("btn-refresh-summary").addEventListener("click", () => { renderSummary(); updateStatusBar(); });
+
   document.getElementById("pay-cash").addEventListener("click", () => resolvePayment("cash"));
-document.getElementById("pay-card").addEventListener("click", () => resolvePayment("card"));
-document.getElementById("pay-cancel").addEventListener("click", () => resolvePayment(null));
+  document.getElementById("pay-card").addEventListener("click", () => resolvePayment("card"));
+  document.getElementById("pay-cancel").addEventListener("click", () => resolvePayment(null));
 
   document.getElementById("btn-edit-note").addEventListener("click", () => {
-    const n = prompt("Optional note (e.g., table number / customer name / comp / etc.):", orderNote);
+    const n = prompt("Optional note (e.g., table number / comp / etc.):", orderNote);
     if(n === null) return;
     orderNote = n.trim();
     renderCurrentOrder();
-    
-    document.getElementById("pay-cash").addEventListener("click", () => resolvePayment("cash"));
-document.getElementById("pay-card").addEventListener("click", () => resolvePayment("card"));
-document.getElementById("pay-cancel").addEventListener("click", () => resolvePayment(null));
   });
-  // --- Payment modal helpers ---
-let pendingPayResolve = null;
 
-function openPayModal(){
-  const m = document.getElementById("pay-modal");
-  if(m) m.style.display = "flex";
-}
-function closePayModal(){
-  const m = document.getElementById("pay-modal");
-  if(m) m.style.display = "none";
-}
-function choosePaymentMethod(){
-  return new Promise((resolve) => {
-    pendingPayResolve = resolve;
-    openPayModal();
-  });
-}
-function resolvePayment(method){
-  closePayModal();
-  if(pendingPayResolve){
-    pendingPayResolve(method);
-    pendingPayResolve = null;
-  }
-}
-
-// Replacement complete function (does NOT require editing your existing completeOrder)
-async function completeOrderWithPay(){
-  const lines = Object.entries(currentOrder).map(([id, qty]) => {
-    const d = drinkById(id);
-    return { id, name: d.name, price: d.price, qty, lineTotal: d.price * qty };
-  });
-  if(lines.length === 0) return;
-
-  const payment = await choosePaymentMethod();
-  if(!payment) return;
-
-  const total = currentTotal();
-
-  const order = {
-    time: nowStamp(),
-    note: orderNote || "",
-    total,
-    payment, // "cash" or "card"
-    lines
-  };
-
-  const orders = loadOrders();
-  orders.unshift(order);
-  saveOrders(orders);
-
-  clearOrder();
-  renderOrders();
-  renderSummary();
-  updateStatusBar();
-
-  switchTab("order");
-  showOrderCompleteOverlay(total);
-}
-  // Init
+  // ====== INIT ======
   renderMenu();
   renderCurrentOrder();
   renderOrders();
   renderSummary();
   updateStatusBar();
 </script>
-<!-- Order complete overlay -->
-<div id="order-complete-overlay" style="display:none;">
-  <div class="oco-card">
-    <div class="oco-title">✅ Order Complete</div>
-    <div class="oco-total" id="oco-total">£0.00</div>
-    <div class="oco-sub">Ready for the next order…</div>
-  </div>
-</div>
 </body>
-
 </html>
