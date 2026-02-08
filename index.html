@@ -324,10 +324,20 @@
   display: none;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,.65);
+
+  /* stronger backdrop */
+  background: rgba(0,0,0,.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
   z-index: 10002;
 }
-   
+
+    #variant-modal .admin-card{
+  border: 1px solid rgba(255,255,255,.16);
+  box-shadow: 0 30px 80px rgba(0,0,0,.70);
+}
+    
   </style>
 </head>
 
@@ -787,6 +797,17 @@ function saveMenu(menuArr){
 
   // ====== HELPERS ======
 
+function applyTapFeedback(btn, e){
+  const r = btn.getBoundingClientRect();
+  const x = ((e.clientX || (r.left + r.width/2)) - r.left) / r.width * 100;
+  const y = ((e.clientY || (r.top + r.height/2)) - r.top) / r.height * 100;
+  btn.style.setProperty("--rx", x + "%");
+  btn.style.setProperty("--ry", y + "%");
+
+  btn.classList.add("flash");
+  setTimeout(() => btn.classList.remove("flash"), 180);
+}
+  
 function findDrink(id){
   return DRINKS.find(d => d.id === id);
 }
@@ -809,10 +830,13 @@ function openVariantModal(group){
     const thumb = d.img ? `<img class="thumb" src="${escapeHtml(d.img)}" alt="">` : "";
     b.innerHTML = `${thumb}<div class="name">${escapeHtml(d.name)}</div><div class="price">${money(d.price)}</div>`;
 
-    b.addEventListener("click", () => {
-      addToOrder(d.id, 1);
-      modal.style.display = "none";
-    });
+    b.addEventListener("click", (e) => {
+  applyTapFeedback(b, e);
+  addToOrder(d.id, 1);
+
+  // close after the flash so you see the feedback
+  setTimeout(() => { modal.style.display = "none"; }, 140);
+});
 
     list.appendChild(b);
   });
@@ -966,11 +990,9 @@ VARIANT_GROUPS.forEach(g => {
   btn.innerHTML = `${thumb}<div class="name">${escapeHtml(g.label)}</div><div class="price">Tap for sizes</div>`;
 
   btn.addEventListener("click", (e) => {
-    // flash feedback
-    btn.classList.add("flash");
-    setTimeout(() => btn.classList.remove("flash"), 180);
-    openVariantModal(g);
-  });
+  applyTapFeedback(btn, e);
+  openVariantModal(g);
+});
 
   grid.appendChild(btn);
 });    
@@ -1278,6 +1300,10 @@ btn.innerHTML = `
 
   // ====== WIRING ======
 
+  document.getElementById("variant-modal").addEventListener("click", (e) => {
+  if(e.target.id === "variant-modal") e.target.style.display = "none";
+});
+
 document.getElementById("variant-close").addEventListener("click", () => {
   document.getElementById("variant-modal").style.display = "none";
 });
@@ -1317,6 +1343,7 @@ document.getElementById("variant-close").addEventListener("click", () => {
 </script>
 </body>
 </html>
+
 
 
 
