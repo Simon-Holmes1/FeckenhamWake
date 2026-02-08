@@ -608,7 +608,7 @@ function resolvePayment(method){
   }
   function saveOrders(orders){
   localStorage.setItem(KEY_ORDERS, JSON.stringify(orders));
-  if (typeof updateStatusBar === "function") updateStatusBar();
+}
 }
   }
   function drinkById(id){ return DRINKS.find(d => d.id === id); }
