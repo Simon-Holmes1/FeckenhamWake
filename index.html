@@ -518,9 +518,94 @@
 </div>
   
 <script>
+  
+let adminDraft = [];
+
+function openAdmin(){
+  document.getElementById("admin-modal").style.display = "flex";
+  adminDraft = DRINKS.map(d => ({...d}));
+  renderAdminTable();
+}
+function closeAdmin(){
+  document.getElementById("admin-modal").style.display = "none";
+}
+
+function renderAdminTable(){
+  const body = document.getElementById("admin-menu-body");
+  body.innerHTML = "";
+
+  adminDraft.forEach((d, idx) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input data-k="id" data-i="${idx}" value="${escapeHtml(d.id)}"></td>
+      <td><input data-k="name" data-i="${idx}" value="${escapeHtml(d.name)}"></td>
+      <td><input data-k="price" data-i="${idx}" value="${Number(d.price).toFixed(2)}"></td>
+      <td><button type="button" class="btn danger" data-del="${idx}">Delete</button></td>
+    `;
+    body.appendChild(tr);
+  });
+
+  body.querySelectorAll("input").forEach(inp => {
+    inp.addEventListener("input", () => {
+      const i = Number(inp.getAttribute("data-i"));
+      const k = inp.getAttribute("data-k");
+      if(k === "price"){
+        const v = Number(String(inp.value).replace(/[^\d.]/g,""));
+        adminDraft[i][k] = Number.isFinite(v) ? v : 0;
+      } else {
+        adminDraft[i][k] = inp.value;
+      }
+    });
+  });
+
+  body.querySelectorAll("button[data-del]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const i = Number(btn.getAttribute("data-del"));
+      adminDraft.splice(i, 1);
+      renderAdminTable();
+    });
+  });
+}
+
+function validateMenu(menuArr){
+  const ids = new Set();
+  for(const d of menuArr){
+    if(!d.id || !d.name) return "Each drink needs an ID and a Name.";
+    const id = d.id.trim();
+    if(ids.has(id)) return `Duplicate ID: ${id}`;
+    ids.add(id);
+    const price = Number(d.price);
+    if(!Number.isFinite(price) || price < 0) return `Invalid price for ${id}`;
+  }
+  return null;
+}
+
+function applyAdminMenu(){
+  const cleaned = adminDraft.map(d => ({
+    id: String(d.id || "").trim(),
+    name: String(d.name || "").trim(),
+    price: Number(d.price || 0)
+  }));
+
+  const err = validateMenu(cleaned);
+  if(err){ alert(err); return; }
+
+  saveMenu(cleaned);
+
+  // Refresh screens
+  renderMenu();
+  renderCurrentOrder();
+  renderOrders();
+  renderSummary();
+  updateStatusBar();
+
+  closeAdmin();
+}
+
+  
   // ====== EDIT YOUR MENU HERE ======
   // Prices are in GBP.
-  const DRINKS = [
+  const DRINKS_DEFAULT = [
     { id: "lager",   name: "Poretti",       price: 4.75 },
     { id: "cider",   name: "Thatchers",     price: 4.75 },
     { id: "ipa",     name: "IPA",           price: 4.75 },
@@ -530,7 +615,33 @@
     { id: "mixer",   name: "Mixer",         price: 1.75 },
     { id: "soft",    name: "Soft Drink",    price: 1.50 },
     { id: "deposit", name: "Glass Deposit", price: 1.00 },
-  ];
+  ]; 
+  const KEY_MENU = "popupbar_menu_override_v1";
+const ADMIN_PIN = "1234"; // CHANGE THIS PIN
+
+let DRINKS = loadMenu();
+
+function loadMenu(){
+  try{
+    const raw = localStorage.getItem(KEY_MENU);
+    if(!raw) return DRINKS_DEFAULT.slice();
+    const parsed = JSON.parse(raw);
+    if(!Array.isArray(parsed)) return DRINKS_DEFAULT.slice();
+    return parsed.map(x => ({
+      id: String(x.id || "").trim(),
+      name: String(x.name || "").trim(),
+      price: Number(x.price || 0)
+    }));
+  } catch {
+    return DRINKS_DEFAULT.slice();
+  }
+}
+
+function saveMenu(menuArr){
+  localStorage.setItem(KEY_MENU, JSON.stringify(menuArr));
+  DRINKS = menuArr.slice();
+}
+
 
   // ====== STORAGE KEYS ======
   const KEY_ORDERS = "popupbar_orders_v2"; // bumped to v2 for clean schema
@@ -602,6 +713,41 @@
     document.getElementById("sb-card").textContent = money(cardTotal);
     document.getElementById("sb-last").textContent = formatLastTime(orders[0]?.time);
   }
+
+  // Admin open: long-press title
+let lpTimer = null;
+const titleEl = document.getElementById("app-title");
+
+titleEl.addEventListener("touchstart", () => {
+  lpTimer = setTimeout(() => {
+    const pin = prompt("Admin PIN:");
+    if(pin === null) return;
+    if(pin === ADMIN_PIN) openAdmin();
+    else alert("Wrong PIN");
+  }, 900);
+}, { passive: true });
+
+titleEl.addEventListener("touchend", () => { clearTimeout(lpTimer); lpTimer = null; });
+
+// Admin buttons
+document.getElementById("admin-close").addEventListener("click", closeAdmin);
+document.getElementById("admin-add").addEventListener("click", () => {
+  adminDraft.push({ id: "new-drink", name: "New drink", price: 0.00 });
+  renderAdminTable();
+});
+document.getElementById("admin-save").addEventListener("click", applyAdminMenu);
+document.getElementById("admin-reset").addEventListener("click", () => {
+  if(confirm("Reset menu to default?")){
+    localStorage.removeItem(KEY_MENU);
+    DRINKS = DRINKS_DEFAULT.slice();
+    renderMenu();
+    renderCurrentOrder();
+    renderOrders();
+    renderSummary();
+    updateStatusBar();
+    closeAdmin();
+  }
+});
 
   // ====== OVERLAY ======
   function showOrderCompleteOverlay(total){
@@ -964,6 +1110,7 @@
 </script>
 </body>
 </html>
+
 
 
 
