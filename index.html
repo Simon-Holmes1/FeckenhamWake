@@ -452,12 +452,6 @@
 
 <div class="spacer"></div>
 
-<div class="row" style="gap:8px;">
-  <button class="btn" id="btn-undo">Undo</button>
-  <button class="btn" id="btn-hold" disabled>Hold Order</button>
-  <button type="button" class="btn primary" id="btn-complete" disabled>Complete Order</button>
-</div>
-
             <div class="row" style="gap:8px;">
   <button class="btn" id="btn-undo">Undo</button>
   <button class="btn" id="btn-hold" disabled>Hold Order</button>
@@ -1119,10 +1113,12 @@ btn.innerHTML = `
 
   // ====== RENDER: CURRENT ORDER ======
   function renderCurrentOrder(){
-    const tbody = document.getElementById("order-lines");
-    const entries = Object.entries(currentOrder);
-    
-    renderHeld();
+  const tbody = document.getElementById("order-lines");
+  const entries = Object.entries(currentOrder);
+
+  renderHeld(); // <-- add this
+  ...
+}
 
     const completeBtn = document.getElementById("btn-complete");
     const noteEl = document.getElementById("order-note");
@@ -1424,6 +1420,7 @@ document.getElementById("variant-close").addEventListener("click", () => {
 </script>
 </body>
 </html>
+
 
 
 
