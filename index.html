@@ -61,10 +61,10 @@
     }
     .status-pill{
       font-size: 13px;
-      padding: 8px 10px;
+      padding: 3px 60px;
       border-radius: 999px;
       background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.10);
+      border: 0px solid rgba(255,255,255,.10);
       color: rgba(245,247,255,.92);
       user-select:none;
     }
@@ -75,7 +75,7 @@
       gap:10px;
       padding: 12px 12px 0 12px;
       background: rgba(10,10,16,.90);
-      border-bottom: 1px solid rgba(255,255,255,.08);
+      border-bottom: 0px solid rgba(255,255,255,.08);
       position: sticky;
       top: 76px; /* header height-ish; ok if slightly off */
       z-index: 19;
@@ -90,7 +90,7 @@
       border: 1px solid var(--border);
       background: rgba(255,255,255,.06);
       color: var(--text);
-      font-weight: 800;
+      font-weight: 600;
       cursor: pointer;
     }
     .tab.active{
@@ -100,7 +100,7 @@
       font-weight: 900;
     }
 
-    main{ padding: 16px; max-width: 980px; margin: 0 auto; background: transparent; }
+    main{ padding: 16px; max-width: 1100px; margin: 0 auto; background: transparent; }
 
     .twoCol{ display:grid; grid-template-columns: 1fr; gap: 12px; }
     @media (min-width: 900px){ .twoCol{ grid-template-columns: 1.1fr .9fr; } }
@@ -110,7 +110,7 @@
       border: 1px solid var(--border);
       border-radius: 18px;
       padding: 18px;
-      box-shadow: 0 16px 34px rgba(0,0,0,.45);
+      box-shadow: 0 16px 50px rgba(0,0,0,1);
     }
 
     .row{ display:flex; justify-content:space-between; gap:10px; align-items:center; }
@@ -121,7 +121,7 @@
     @media (min-width: 1024px){ .grid{ grid-template-columns: repeat(4, minmax(0,1fr)); } }
 
     .drink{
-      background: rgba(255,255,255,.06);
+      background: rgba(255,255,255,.02);
       border: 1px solid var(--border);
       border-radius: 18px;
       padding: 18px;
@@ -160,8 +160,8 @@
     .qtyControls{ display:inline-flex; gap:6px; align-items:center; }
 
     .btn{
-      padding: 10px 12px;
-      border-radius: 14px;
+      padding: 10px 20px;
+      border-radius: 18px;
       border: 1px solid var(--border);
       background: rgba(255,255,255,.06);
       color: var(--text);
@@ -170,7 +170,7 @@
       transition: transform .05s ease;
     }
     .btn:active{ transform: scale(0.98); }
-    .btn:disabled{ opacity: .5; cursor: not-allowed; }
+    .btn:disabled{ opacity: .3; cursor: not-allowed; }
 
     .btn.primary{
       background: linear-gradient(135deg, var(--accent), var(--accent2));
@@ -184,7 +184,7 @@
     }
 
     #btn-complete{
-      font-size: 16px;
+      font-size: 20px;
       padding: 14px 14px;
       border-radius: 14px;
     }
@@ -1575,3 +1575,4 @@ document.getElementById("variant-close").addEventListener("click", () => {
 </script>
 </body>
 </html>
+
