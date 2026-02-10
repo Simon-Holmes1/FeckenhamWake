@@ -7,7 +7,8 @@
 
   <style>
     :root{
-      font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      --fontFamily: -apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      font-family: var(--fontFamily);
       --bg:#0b0b10;
       --card:#12121a;
       --card2:#161622;
@@ -139,14 +140,14 @@
 
     /* tap flash + ripple */
     .drink.flash{
-      outline: 3px solid rgba(245, 158, 11, 0.9);
-      box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.18);
+      outline: 3px solid color-mix(in srgb, var(--accent) 90%, transparent);
+      box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 18%, transparent);
     }
     .drink::after{
       content:"";
       position:absolute;
       inset:0;
-      background: radial-gradient(circle at var(--rx, 50%) var(--ry, 50%), rgba(245,158,11,.35), transparent 55%);
+      background: radial-gradient(circle at var(--rx, 50%) var(--ry, 50%), color-mix(in srgb, var(--accent) 35%, transparent), transparent 55%);
       opacity: 0;
       transition: opacity 160ms ease;
       pointer-events:none;
@@ -371,8 +372,8 @@
 }
 
 .held-chip.active{
-  outline: 3px solid rgba(245, 158, 11, 0.9);
-  box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.18);
+  outline: 3px solid color-mix(in srgb, var(--accent) 90%, transparent);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
   
@@ -461,8 +462,8 @@ html[data-theme="light"] #btn-settings{
   cursor: pointer;
 }
 #settings-modal .seg button.active{
-  outline: 2px solid rgba(245,158,11,.85);
-  box-shadow: 0 0 0 6px rgba(245,158,11,.16);
+  outline: 2px solid color-mix(in srgb, var(--accent) 85%, transparent);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 16%, transparent);
 }
 #settings-modal input[type="range"]{ width: 100%; }
 
@@ -477,6 +478,18 @@ html[data-theme="light"] canvas{
 }
 html[data-theme="hc"]{
   filter: contrast(1.25) saturate(1.05);
+}
+
+
+/* Settings inputs */
+#settings-modal select, 
+#settings-modal input[type="color"]{
+  border-radius: 14px;
+}
+#settings-modal select{
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 34px;
 }
 
 </style>
@@ -1677,7 +1690,7 @@ document.getElementById("variant-close").addEventListener("click", () => {
 
 // ===== Settings (Phase 1): Theme + Scale =====
 const KEY_SETTINGS = "popupbar_display_settings_v1";
-const DEFAULT_SETTINGS = { theme: "dark", scale: 1.0 };
+const DEFAULT_SETTINGS = { theme: "dark", scale: 1.0, font: "system", accent: "#f59e0b" };
 
 function loadSettings(){
   try{
@@ -1686,7 +1699,9 @@ function loadSettings(){
     const s = JSON.parse(raw);
     return {
       theme: (s.theme === "light" || s.theme === "hc") ? s.theme : "dark",
-      scale: (typeof s.scale === "number" && s.scale >= 0.85 && s.scale <= 1.25) ? s.scale : 1.0
+      scale: (typeof s.scale === "number" && s.scale >= 0.85 && s.scale <= 1.25) ? s.scale : 1.0,
+      font: (s.font === "rounded" || s.font === "mono" || s.font === "system") ? s.font : "system",
+      accent: (typeof s.accent === "string" && /^#([0-9a-fA-F]{6})$/.test(s.accent)) ? s.accent : "#f59e0b"
     };
   } catch {
     return { ...DEFAULT_SETTINGS };
@@ -1701,6 +1716,19 @@ let displaySettings = loadSettings();
 function applySettings(){
   document.documentElement.setAttribute("data-theme", displaySettings.theme);
   document.documentElement.style.setProperty("--ui-scale", String(displaySettings.scale));
+
+  // Font + Accent
+  const fontMap = {
+    system: "-apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif",
+    rounded: "ui-rounded, -apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif",
+    mono: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
+  };
+  document.documentElement.style.setProperty("--fontFamily", fontMap[displaySettings.font] || fontMap.system);
+
+  // Accent: used in gradients + highlights. We also mirror it into accent2 for a cohesive look.
+  document.documentElement.style.setProperty("--accent", displaySettings.accent);
+  document.documentElement.style.setProperty("--accent2", displaySettings.accent);
+
 
   const scaleLabel = document.getElementById("scale-label");
   if(scaleLabel) scaleLabel.textContent = Math.round(displaySettings.scale * 100) + "%";
@@ -1722,6 +1750,12 @@ function openSettings(){
 
   const slider = document.getElementById("ui-scale");
   if(slider) slider.value = String(displaySettings.scale);
+
+  const fontSel = document.getElementById("set-font");
+  if(fontSel) fontSel.value = displaySettings.font || "system";
+
+  const accentInp = document.getElementById("set-accent");
+  if(accentInp) accentInp.value = displaySettings.accent || "#f59e0b";
   applySettings();
 }
 
@@ -1739,6 +1773,10 @@ function bindSettingsUI(){
   const slider = document.getElementById("ui-scale");
   const seg = document.getElementById("theme-seg");
   const modal = document.getElementById("settings-modal");
+
+  const fontSel = document.getElementById("set-font");
+  const accentInp = document.getElementById("set-accent");
+  const accentReset = document.getElementById("set-accent-reset");
 
   if(btn) btn.addEventListener("click", openSettings);
   if(btnClose) btnClose.addEventListener("click", closeSettings);
@@ -1758,6 +1796,31 @@ function bindSettingsUI(){
     slider.addEventListener("input", ()=>{
       displaySettings.scale = Number(slider.value);
       saveSettings(displaySettings);
+      applySettings();
+    });
+  }
+
+  if(fontSel){
+    fontSel.addEventListener("change", ()=>{
+      displaySettings.font = fontSel.value || "system";
+      saveSettings(displaySettings);
+      applySettings();
+    });
+  }
+
+  if(accentInp){
+    accentInp.addEventListener("input", ()=>{
+      displaySettings.accent = accentInp.value || "#f59e0b";
+      saveSettings(displaySettings);
+      applySettings();
+    });
+  }
+
+  if(accentReset){
+    accentReset.addEventListener("click", ()=>{
+      displaySettings.accent = DEFAULT_SETTINGS.accent;
+      saveSettings(displaySettings);
+      if(accentInp) accentInp.value = displaySettings.accent;
       applySettings();
     });
   }
@@ -1808,6 +1871,27 @@ window.addEventListener("load", bindSettingsUI);
       <div class="muted" id="scale-label">100%</div>
     </div>
     <input id="ui-scale" type="range" min="0.85" max="1.25" step="0.01" value="1.00" />
+
+
+    <div class="spacer"></div>
+
+    <div class="settings-row" style="gap:12px;">
+      <div style="font-weight:900;">Font</div>
+      <select id="set-font" class="btn" style="flex:1; min-width:220px;">
+        <option value="system">Default (System)</option>
+        <option value="rounded">Rounded</option>
+        <option value="mono">Mono</option>
+      </select>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="settings-row" style="gap:12px;">
+      <div style="font-weight:900;">Accent</div>
+      <input id="set-accent" type="color" value="#f59e0b" style="height:42px; width:72px; border:0; background:transparent; padding:0;">
+      <button class="btn" type="button" id="set-accent-reset">Reset Accent</button>
+    </div>
+
 
     <div class="spacer"></div>
 
