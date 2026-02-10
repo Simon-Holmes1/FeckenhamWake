@@ -17,6 +17,11 @@
       --border: rgba(255,255,255,.10);
       --accent:#f59e0b;
       --accent2:#ef4444;
+      --ui-scale: 1;
+      --grid-cols: 2;
+      --grid-gap: 12px;
+      --tile-pad: 18px;
+      --thumb-size: 42px;
     }
 
     html, body{
@@ -110,16 +115,14 @@
       background: linear-gradient(180deg, var(--card), var(--card2));
       border: 1px solid var(--border);
       border-radius: 18px;
-      padding: 18px;
+      padding: var(--tile-pad);
       box-shadow: 0 16px 50px rgba(0,0,0,1);
     }
 
     .row{ display:flex; justify-content:space-between; gap:10px; align-items:center; }
     .muted{ color: var(--muted); font-size: 14px; }
 
-    .grid{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
-    @media (min-width: 760px){ .grid{ grid-template-columns: repeat(3, minmax(0,1fr)); } }
-    @media (min-width: 1024px){ .grid{ grid-template-columns: repeat(4, minmax(0,1fr)); } }
+    .grid{ display:grid; grid-template-columns: repeat(var(--grid-cols), minmax(0,1fr)); gap: var(--grid-gap); }
 
     .drink{
       background: rgba(255,255,255,.02);
@@ -303,8 +306,8 @@
 
 /* Drink thumbnails */
 .thumb{
-  width: 42px;
-  height: 42px;
+  width: var(--thumb-size);
+  height: var(--thumb-size);
   border-radius: 12px;
   object-fit: cover;
   margin: 0 auto 10px auto;
@@ -377,10 +380,7 @@
 }
 
   
-/* ===== Settings (Phase 1) ===== */
-:root{
-  --ui-scale: 1;
-}
+/* ===== Settings ===== */
 
 /* Scale the whole UI (works on iOS Safari) */
 body{
@@ -1690,7 +1690,7 @@ document.getElementById("variant-close").addEventListener("click", () => {
 
 // ===== Settings (Phase 1): Theme + Scale =====
 const KEY_SETTINGS = "popupbar_display_settings_v1";
-const DEFAULT_SETTINGS = { theme: "dark", scale: 1.0, font: "system", accent: "#f59e0b" };
+const DEFAULT_SETTINGS = { theme: "dark", scale: 1.0, font: "system", accent: "#f59e0b", layout: "auto", colsOverride: null, thumbOverride: null, padOverride: null };
 
 function loadSettings(){
   try{
@@ -1701,7 +1701,11 @@ function loadSettings(){
       theme: (s.theme === "light" || s.theme === "hc") ? s.theme : "dark",
       scale: (typeof s.scale === "number" && s.scale >= 0.85 && s.scale <= 1.25) ? s.scale : 1.0,
       font: (s.font === "rounded" || s.font === "mono" || s.font === "system") ? s.font : "system",
-      accent: (typeof s.accent === "string" && /^#([0-9a-fA-F]{6})$/.test(s.accent)) ? s.accent : "#f59e0b"
+      accent: (typeof s.accent === "string" && /^#([0-9a-fA-F]{6})$/.test(s.accent)) ? s.accent : "#f59e0b",
+      layout: (s.layout === "iphone-portrait" || s.layout === "iphone-landscape" || s.layout === "ipad-portrait" || s.layout === "ipad-landscape") ? s.layout : "auto",
+      colsOverride: (typeof s.colsOverride === "number" && s.colsOverride >= 2 && s.colsOverride <= 5) ? s.colsOverride : null,
+      thumbOverride: (typeof s.thumbOverride === "number" && s.thumbOverride >= 32 && s.thumbOverride <= 80) ? s.thumbOverride : null,
+      padOverride: (typeof s.padOverride === "number" && s.padOverride >= 12 && s.padOverride <= 28) ? s.padOverride : null
     };
   } catch {
     return { ...DEFAULT_SETTINGS };
@@ -1730,6 +1734,49 @@ function applySettings(){
   document.documentElement.style.setProperty("--accent2", displaySettings.accent);
 
 
+  // Layout + density (auto/presets + optional overrides)
+  function autoPreset(){
+    const w = window.innerWidth || 1024;
+    const h = window.innerHeight || 768;
+    const landscape = w > h;
+    const isPhone = Math.min(w, h) < 600;
+
+    if(isPhone && !landscape) return { cols: 2, thumb: 44, pad: 16, gap: 10 };
+    if(isPhone && landscape)  return { cols: 3, thumb: 40, pad: 14, gap: 10 };
+
+    if(!landscape) return { cols: 3, thumb: 48, pad: 18, gap: 12 };
+    // iPad landscape
+    if(w >= 1180) return { cols: 5, thumb: 50, pad: 18, gap: 12 };
+    return { cols: 4, thumb: 50, pad: 18, gap: 12 };
+  }
+
+  const presets = {
+    "iphone-portrait": { cols: 2, thumb: 44, pad: 16, gap: 10 },
+    "iphone-landscape": { cols: 3, thumb: 40, pad: 14, gap: 10 },
+    "ipad-portrait": { cols: 3, thumb: 48, pad: 18, gap: 12 },
+    "ipad-landscape": { cols: 4, thumb: 50, pad: 18, gap: 12 }
+  };
+
+  const base = (displaySettings.layout === "auto") ? autoPreset() : (presets[displaySettings.layout] || autoPreset());
+
+  const cols = (displaySettings.colsOverride !== null) ? displaySettings.colsOverride : base.cols;
+  const thumb = (displaySettings.thumbOverride !== null) ? displaySettings.thumbOverride : base.thumb;
+  const pad = (displaySettings.padOverride !== null) ? displaySettings.padOverride : base.pad;
+  const gap = base.gap;
+
+  document.documentElement.style.setProperty("--grid-cols", String(cols));
+  document.documentElement.style.setProperty("--thumb-size", String(thumb) + "px");
+  document.documentElement.style.setProperty("--tile-pad", String(pad) + "px");
+  document.documentElement.style.setProperty("--grid-gap", String(gap) + "px");
+
+  // Update labels if modal is open
+  const colsLabel = document.getElementById("cols-label");
+  const thumbLabel = document.getElementById("thumb-label");
+  const padLabel = document.getElementById("pad-label");
+  if(colsLabel) colsLabel.textContent = (displaySettings.colsOverride === null ? "Auto · " : "") + cols;
+  if(thumbLabel) thumbLabel.textContent = (displaySettings.thumbOverride === null ? "Auto · " : "") + thumb + "px";
+  if(padLabel) padLabel.textContent = (displaySettings.padOverride === null ? "Auto · " : "") + pad + "px";
+
   const scaleLabel = document.getElementById("scale-label");
   if(scaleLabel) scaleLabel.textContent = Math.round(displaySettings.scale * 100) + "%";
 
@@ -1756,6 +1803,32 @@ function openSettings(){
 
   const accentInp = document.getElementById("set-accent");
   if(accentInp) accentInp.value = displaySettings.accent || "#f59e0b";
+
+  const layoutSel = document.getElementById("set-layout");
+  if(layoutSel) layoutSel.value = displaySettings.layout || "auto";
+
+  // Slider UI: show base values, but keep overrides if set
+  const base = (displaySettings.layout === "auto") ? (function(){ const w=window.innerWidth||1024,h=window.innerHeight||768,land=w>h,isPhone=Math.min(w,h)<600;
+    if(isPhone && !land) return { cols:2, thumb:44, pad:16 };
+    if(isPhone && land)  return { cols:3, thumb:40, pad:14 };
+    if(!land) return { cols:3, thumb:48, pad:18 };
+    if(w>=1180) return { cols:5, thumb:50, pad:18 };
+    return { cols:4, thumb:50, pad:18 };
+  })() : ({ 
+    "iphone-portrait": { cols:2, thumb:44, pad:16 },
+    "iphone-landscape": { cols:3, thumb:40, pad:14 },
+    "ipad-portrait": { cols:3, thumb:48, pad:18 },
+    "ipad-landscape": { cols:4, thumb:50, pad:18 }
+  }[displaySettings.layout] || { cols:3, thumb:48, pad:18 });
+
+  const colsSlider = document.getElementById("set-cols");
+  const thumbSlider = document.getElementById("set-thumb");
+  const padSlider = document.getElementById("set-pad");
+
+  if(colsSlider) colsSlider.value = String(displaySettings.colsOverride !== null ? displaySettings.colsOverride : base.cols);
+  if(thumbSlider) thumbSlider.value = String(displaySettings.thumbOverride !== null ? displaySettings.thumbOverride : base.thumb);
+  if(padSlider) padSlider.value = String(displaySettings.padOverride !== null ? displaySettings.padOverride : base.pad);
+
   applySettings();
 }
 
@@ -1777,6 +1850,15 @@ function bindSettingsUI(){
   const fontSel = document.getElementById("set-font");
   const accentInp = document.getElementById("set-accent");
   const accentReset = document.getElementById("set-accent-reset");
+
+  const layoutSel = document.getElementById("set-layout");
+  const colsSlider = document.getElementById("set-cols");
+  const thumbSlider = document.getElementById("set-thumb");
+  const padSlider = document.getElementById("set-pad");
+  const colsAuto = document.getElementById("btn-cols-auto");
+  const thumbAuto = document.getElementById("btn-thumb-auto");
+  const padAuto = document.getElementById("btn-pad-auto");
+
 
   if(btn) btn.addEventListener("click", openSettings);
   if(btnClose) btnClose.addEventListener("click", closeSettings);
@@ -1825,6 +1907,74 @@ function bindSettingsUI(){
     });
   }
 
+
+  // Layout presets
+  if(layoutSel){
+    layoutSel.addEventListener("change", ()=>{
+      displaySettings.layout = layoutSel.value || "auto";
+      saveSettings(displaySettings);
+      // If switching layout mode and no manual overrides, snap sliders to new base
+      if(displaySettings.colsOverride === null || displaySettings.thumbOverride === null || displaySettings.padOverride === null){
+        // leave as-is; applySettings updates labels
+      }
+      applySettings();
+    });
+  }
+
+  // Manual density sliders (set overrides)
+  if(colsSlider){
+    colsSlider.addEventListener("input", ()=>{
+      displaySettings.colsOverride = Number(colsSlider.value);
+      saveSettings(displaySettings);
+      applySettings();
+    });
+  }
+  if(thumbSlider){
+    thumbSlider.addEventListener("input", ()=>{
+      displaySettings.thumbOverride = Number(thumbSlider.value);
+      saveSettings(displaySettings);
+      applySettings();
+    });
+  }
+  if(padSlider){
+    padSlider.addEventListener("input", ()=>{
+      displaySettings.padOverride = Number(padSlider.value);
+      saveSettings(displaySettings);
+      applySettings();
+    });
+  }
+
+  // Auto buttons (clear overrides)
+  if(colsAuto){
+    colsAuto.addEventListener("click", ()=>{
+      displaySettings.colsOverride = null;
+      saveSettings(displaySettings);
+      applySettings();
+      // slider snaps to current auto/preset value
+      const baseCols = Number(getComputedStyle(document.documentElement).getPropertyValue("--grid-cols")) || 3;
+      colsSlider && (colsSlider.value = String(baseCols));
+    });
+  }
+  if(thumbAuto){
+    thumbAuto.addEventListener("click", ()=>{
+      displaySettings.thumbOverride = null;
+      saveSettings(displaySettings);
+      applySettings();
+      const v = getComputedStyle(document.documentElement).getPropertyValue("--thumb-size").trim().replace("px","");
+      thumbSlider && (thumbSlider.value = String(Number(v) || 42));
+    });
+  }
+  if(padAuto){
+    padAuto.addEventListener("click", ()=>{
+      displaySettings.padOverride = null;
+      saveSettings(displaySettings);
+      applySettings();
+      const v = getComputedStyle(document.documentElement).getPropertyValue("--tile-pad").trim().replace("px","");
+      padSlider && (padSlider.value = String(Number(v) || 18));
+    });
+  }
+
+
   if(btnReset){
     btnReset.addEventListener("click", ()=>{
       displaySettings = { ...DEFAULT_SETTINGS };
@@ -1836,6 +1986,20 @@ function bindSettingsUI(){
 
 // Apply immediately on load (before user taps anything)
 applySettings();
+// Re-apply layout automatically on resize/orientation changes (only in Auto and only if no manual overrides)
+let _rsT = null;
+window.addEventListener("resize", ()=>{
+  if(_rsT) clearTimeout(_rsT);
+  _rsT = setTimeout(()=>{
+    if(displaySettings.layout === "auto" &&
+       displaySettings.colsOverride === null &&
+       displaySettings.thumbOverride === null &&
+       displaySettings.padOverride === null){
+      applySettings();
+    }
+  }, 120);
+});
+
 // Bind after DOM exists
 window.addEventListener("load", bindSettingsUI);
 
