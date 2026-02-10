@@ -375,7 +375,111 @@
   box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.18);
 }
 
-  </style>
+  
+/* ===== Settings (Phase 1) ===== */
+:root{
+  --ui-scale: 1;
+}
+
+/* Scale the whole UI (works on iOS Safari) */
+body{
+  transform: scale(var(--ui-scale));
+  transform-origin: top left;
+  width: calc(100% / var(--ui-scale));
+}
+
+/* Settings button (top-left, out of the way) */
+#btn-settings{
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 20000;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.06);
+  color: rgba(245,247,255,.95);
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+#btn-settings:active{ transform: scale(.98); }
+html[data-theme="light"] #btn-settings{
+  border-color: rgba(0,0,0,.14);
+  background: rgba(0,0,0,.06);
+  color: rgba(10,10,16,.92);
+}
+
+/* Modal backdrop + card */
+#settings-modal{
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 20001;
+}
+#settings-modal .settings-card{
+  width: min(520px, 92vw);
+  border-radius: 22px;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(18,18,26,.96);
+  box-shadow: 0 30px 80px rgba(0,0,0,.70);
+}
+#settings-modal .settings-title{
+  font-weight: 950;
+  font-size: 20px;
+}
+#settings-modal .settings-row{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+#settings-modal label{ font-weight: 800; }
+#settings-modal .seg{
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+#settings-modal .seg button{
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: rgba(245,247,255,.95);
+  font-weight: 850;
+  cursor: pointer;
+}
+#settings-modal .seg button.active{
+  outline: 2px solid rgba(245,158,11,.85);
+  box-shadow: 0 0 0 6px rgba(245,158,11,.16);
+}
+#settings-modal input[type="range"]{ width: 100%; }
+
+/* Theme switching without rewriting your whole CSS: use filters */
+html[data-theme="light"]{
+  filter: invert(1) hue-rotate(180deg);
+}
+html[data-theme="light"] img,
+html[data-theme="light"] video,
+html[data-theme="light"] canvas{
+  filter: invert(1) hue-rotate(180deg);
+}
+html[data-theme="hc"]{
+  filter: contrast(1.25) saturate(1.05);
+}
+
+</style>
 </head>
 
 <body>
@@ -1569,9 +1673,150 @@ document.getElementById("variant-close").addEventListener("click", () => {
   renderOrders();
   renderSummary();
   updateStatusBar();
+
+
+// ===== Settings (Phase 1): Theme + Scale =====
+const KEY_SETTINGS = "popupbar_display_settings_v1";
+const DEFAULT_SETTINGS = { theme: "dark", scale: 1.0 };
+
+function loadSettings(){
+  try{
+    const raw = localStorage.getItem(KEY_SETTINGS);
+    if(!raw) return { ...DEFAULT_SETTINGS };
+    const s = JSON.parse(raw);
+    return {
+      theme: (s.theme === "light" || s.theme === "hc") ? s.theme : "dark",
+      scale: (typeof s.scale === "number" && s.scale >= 0.85 && s.scale <= 1.25) ? s.scale : 1.0
+    };
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+function saveSettings(s){
+  localStorage.setItem(KEY_SETTINGS, JSON.stringify(s));
+}
+
+let displaySettings = loadSettings();
+
+function applySettings(){
+  document.documentElement.setAttribute("data-theme", displaySettings.theme);
+  document.documentElement.style.setProperty("--ui-scale", String(displaySettings.scale));
+
+  const scaleLabel = document.getElementById("scale-label");
+  if(scaleLabel) scaleLabel.textContent = Math.round(displaySettings.scale * 100) + "%";
+
+  // Update active state on buttons
+  const seg = document.getElementById("theme-seg");
+  if(seg){
+    seg.querySelectorAll("button[data-theme]").forEach(b=>{
+      b.classList.toggle("active", b.getAttribute("data-theme") === displaySettings.theme);
+    });
+  }
+}
+
+function openSettings(){
+  const m = document.getElementById("settings-modal");
+  if(!m) return;
+  m.style.display = "flex";
+  m.setAttribute("aria-hidden","false");
+
+  const slider = document.getElementById("ui-scale");
+  if(slider) slider.value = String(displaySettings.scale);
+  applySettings();
+}
+
+function closeSettings(){
+  const m = document.getElementById("settings-modal");
+  if(!m) return;
+  m.style.display = "none";
+  m.setAttribute("aria-hidden","true");
+}
+
+function bindSettingsUI(){
+  const btn = document.getElementById("btn-settings");
+  const btnClose = document.getElementById("btn-settings-close");
+  const btnReset = document.getElementById("btn-settings-reset");
+  const slider = document.getElementById("ui-scale");
+  const seg = document.getElementById("theme-seg");
+  const modal = document.getElementById("settings-modal");
+
+  if(btn) btn.addEventListener("click", openSettings);
+  if(btnClose) btnClose.addEventListener("click", closeSettings);
+  if(modal) modal.addEventListener("click", (e)=>{ if(e.target && e.target.id === "settings-modal") closeSettings(); });
+
+  if(seg){
+    seg.querySelectorAll("button[data-theme]").forEach(b=>{
+      b.addEventListener("click", ()=>{
+        displaySettings.theme = b.getAttribute("data-theme") || "dark";
+        saveSettings(displaySettings);
+        applySettings();
+      });
+    });
+  }
+
+  if(slider){
+    slider.addEventListener("input", ()=>{
+      displaySettings.scale = Number(slider.value);
+      saveSettings(displaySettings);
+      applySettings();
+    });
+  }
+
+  if(btnReset){
+    btnReset.addEventListener("click", ()=>{
+      displaySettings = { ...DEFAULT_SETTINGS };
+      saveSettings(displaySettings);
+      applySettings();
+    });
+  }
+}
+
+// Apply immediately on load (before user taps anything)
+applySettings();
+// Bind after DOM exists
+window.addEventListener("load", bindSettingsUI);
+
 </script>
+
+<!-- Settings button (fixed top-left) -->
+<button id="btn-settings" type="button" title="Settings">⚙️</button>
+
+<!-- Settings modal -->
+<div id="settings-modal" aria-hidden="true">
+  <div class="settings-card">
+    <div class="settings-row" style="margin-bottom:10px;">
+      <div>
+        <div class="settings-title">Settings</div>
+        <div class="muted">Theme + readability for sunny days.</div>
+      </div>
+      <button type="button" class="btn" id="btn-settings-close">Close</button>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div style="font-weight:900; margin-bottom:8px;">Theme</div>
+    <div class="seg" id="theme-seg">
+      <button type="button" data-theme="dark">Dark</button>
+      <button type="button" data-theme="light">Light</button>
+      <button type="button" data-theme="hc">High Contrast</button>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="settings-row" style="gap:14px;">
+      <div style="font-weight:900;">UI Scale</div>
+      <div class="muted" id="scale-label">100%</div>
+    </div>
+    <input id="ui-scale" type="range" min="0.85" max="1.25" step="0.01" value="1.00" />
+
+    <div class="spacer"></div>
+
+    <div class="settings-row">
+      <button type="button" class="btn danger" id="btn-settings-reset">Reset</button>
+      <div class="muted">Saved on this device.</div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
-
-
-
