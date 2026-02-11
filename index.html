@@ -17,7 +17,34 @@
       --border: rgba(255,255,255,.10);
       --accent:#f59e0b;
       --accent2:#ef4444;
+      --tileBg: rgba(18,18,26,.78);
+      --tileBorder: rgba(255,255,255,.12);
+      --thumbBg: rgba(0,0,0,.28);
+      --thumbBg2: rgba(0,0,0,.22);
     }
+
+
+    /* Theme overrides (light + high contrast) */
+    html[data-theme="light"]{
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --card2:#f1f3f8;
+      --text:#0b0b10;
+      --muted:#4b5563;
+      --border: rgba(0,0,0,.12);
+      --tileBg: rgba(0,0,0,.04);
+      --tileBorder: rgba(0,0,0,.12);
+      --thumbBg: rgba(0,0,0,.08);
+      --thumbBg2: rgba(0,0,0,.06);
+    }
+
+    html[data-theme="hc"]{
+      --tileBg: rgba(0,0,0,.55);
+      --tileBorder: rgba(255,255,255,.35);
+      --thumbBg: rgba(0,0,0,.70);
+      --thumbBg2: rgba(0,0,0,.60);
+    }
+
 
     html, body{
       margin:0;
@@ -64,7 +91,7 @@
       font-size: 13px;
       padding: 3px 60px;
       border-radius: 999px;
-      background: rgba(255,255,255,.06);
+      background: var(--thumbBg);
       border: 0px solid rgba(255,255,255,.10);
       color: rgba(245,247,255,.92);
       user-select:none;
@@ -89,7 +116,7 @@
       padding: 12px 10px;
       border-radius: 14px;
       border: 1px solid var(--border);
-      background: rgba(255,255,255,.06);
+      background: var(--thumbBg);
       color: var(--text);
       font-weight: 600;
       cursor: pointer;
@@ -122,7 +149,7 @@
     }
 
     .drink{
-      background: rgba(255,255,255,.02);
+      background: var(--tileBg);
       border: 1px solid var(--border);
       border-radius: 18px;
       padding: var(--tile-pad, 18px);
@@ -164,7 +191,7 @@
       padding: 10px 20px;
       border-radius: 18px;
       border: 1px solid var(--border);
-      background: rgba(255,255,255,.06);
+      background: var(--thumbBg);
       color: var(--text);
       cursor: pointer;
       font-weight: 800;
@@ -294,7 +321,7 @@
   padding: 10px 10px;
   border-radius: 12px;
   border: 1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.06);
+  background: var(--thumbBg);
   color: rgba(245,247,255,.95);
   font-weight: 700;
   outline: none;
@@ -310,12 +337,12 @@
   margin: 0 auto 10px auto;
   display: block;
   border: 1px solid rgba(255,255,255,.12);
-  background: rgba(0,0,0,.28);
+  background: var(--thumbBg);
 }
 
 .thumb.placeholder{
   /* if a drink has no img, still keep layout consistent */
-  background: rgba(0,0,0,.22);
+  background: var(--thumbBg2);
 }
 
 /* Variants modal uses same styling as other modals */
@@ -348,7 +375,7 @@
   padding: 10px 12px;
   border-radius: 999px;
   border: 1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.06);
+  background: var(--thumbBg);
   color: rgba(245,247,255,.95);
   font-weight: 850;
   cursor: pointer;
@@ -399,7 +426,7 @@ body{
   height: 44px;
   border-radius: 14px;
   border: 1px solid rgba(255,255,255,.16);
-  background: rgba(255,255,255,.06);
+  background: var(--thumbBg);
   color: rgba(245,247,255,.95);
   font-weight: 900;
   cursor: pointer;
@@ -456,7 +483,7 @@ html[data-theme="light"] #btn-settings{
   padding: 10px 12px;
   border-radius: 999px;
   border: 1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.06);
+  background: var(--thumbBg);
   color: rgba(245,247,255,.95);
   font-weight: 850;
   cursor: pointer;
@@ -468,14 +495,6 @@ html[data-theme="light"] #btn-settings{
 #settings-modal input[type="range"]{ width: 100%; }
 
 /* Theme switching without rewriting your whole CSS: use filters */
-html[data-theme="light"]{
-  filter: invert(1) hue-rotate(180deg);
-}
-html[data-theme="light"] img,
-html[data-theme="light"] video,
-html[data-theme="light"] canvas{
-  filter: invert(1) hue-rotate(180deg);
-}
 html[data-theme="hc"]{
   filter: contrast(1.25) saturate(1.05);
 }
@@ -2152,4 +2171,3 @@ window.addEventListener("load", bindSettingsUI);
 
 </body>
 </html>
-
