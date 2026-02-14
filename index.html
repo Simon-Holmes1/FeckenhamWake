@@ -1293,7 +1293,7 @@ document.getElementById("admin-reset").addEventListener("click", () => {
       pendingPayResolve(method);
       pendingPayResolve = null;
     }
-
+  }
 
   // ====== CASH CHANGE MODAL ======
   let pendingCashResolve = null;
@@ -1377,8 +1377,6 @@ document.getElementById("admin-reset").addEventListener("click", () => {
     changeEl.textContent = money(diff);
     hintEl.textContent = "Change due";
     confirmBtn.disabled = false;
-  }
-
   }
 
   // ====== RENDER: MENU ======
