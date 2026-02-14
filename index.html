@@ -252,6 +252,72 @@
       border-radius: 16px;
     }
 
+
+
+    /* Cash change modal */
+    #cash-modal{
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.65);
+      z-index: 10000;
+    }
+    #cash-modal .cash-card{
+      width: min(560px, 94vw);
+      border-radius: 22px;
+      padding: 18px;
+      background: rgba(18,18,26,.96);
+      border: 1px solid var(--tileBorder);
+      box-shadow: 0 24px 60px rgba(0,0,0,.55);
+    }
+    #cash-modal .cash-title{
+      font-weight: 950;
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+    #cash-modal .cash-grid{
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 10px;
+    }
+    @media (max-width: 520px){
+      #cash-modal .cash-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+    #cash-modal input[type="number"]{
+      width: 100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: var(--thumbBg);
+      color: rgba(245,247,255,.95);
+      font-weight: 900;
+      font-size: 18px;
+      outline: none;
+    }
+    html[data-theme="light"] #cash-modal .cash-card{
+      background: rgba(255,255,255,.96);
+      border-color: rgba(0,0,0,.12);
+    }
+    html[data-theme="light"] #cash-modal input[type="number"]{
+      border-color: rgba(0,0,0,.14);
+      background: rgba(0,0,0,.06);
+      color: rgba(10,10,16,.92);
+    }
+    #cash-modal .cash-change{
+      font-weight: 950;
+      font-size: 34px;
+      letter-spacing: -0.02em;
+      text-align: right;
+    }
+    #cash-modal .cash-hint{
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 2px;
+      text-align: right;
+    }
+
     /* Order complete overlay */
     #order-complete-overlay{
       position: fixed;
@@ -689,6 +755,61 @@ html[data-theme="hc"]{
 
       <button type="button" class="btn" id="pay-cancel" style="margin-top:12px; width:100%;">Cancel</button>
     </div>
+
+
+  <!-- Cash change modal -->
+  <div id="cash-modal" aria-hidden="true">
+    <div class="cash-card">
+      <div class="cash-title">Cash payment</div>
+
+      <div class="row" style="align-items:flex-end;">
+        <div>
+          <div class="muted">Total</div>
+          <div style="font-weight:950; font-size:26px;" id="cash-total">£0.00</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="muted">Change</div>
+          <div class="cash-change" id="cash-change">£0.00</div>
+          <div class="cash-hint" id="cash-hint">Enter cash received</div>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <div class="row" style="gap:12px; align-items:center;">
+        <div style="min-width:140px; font-weight:900;">Cash received</div>
+        <div style="flex:1;">
+          <input id="cash-received" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00">
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <div class="cash-grid">
+        <button type="button" class="btn primary" data-cash="exact">Exact</button>
+        <button type="button" class="btn" data-cash="1">£1</button>
+        <button type="button" class="btn" data-cash="2">£2</button>
+        <button type="button" class="btn" data-cash="5">£5</button>
+
+        <button type="button" class="btn" data-cash="10">£10</button>
+        <button type="button" class="btn" data-cash="20">£20</button>
+        <button type="button" class="btn" data-cash="next5">Next £5</button>
+        <button type="button" class="btn" data-cash="next10">Next £10</button>
+      </div>
+
+      <div class="spacer"></div>
+
+      <div class="row" style="gap:10px;">
+        <button type="button" class="btn" id="cash-cancel" style="flex:1;">Cancel</button>
+        <button type="button" class="btn primary" id="cash-confirm" style="flex:1;" disabled>Confirm Cash</button>
+      </div>
+
+      <div class="muted" style="margin-top:10px;">
+        Tip: tap a quick amount, or type the exact cash received.
+      </div>
+    </div>
+  </div>
+
   </div>
 
   <!-- Order complete overlay -->
@@ -1171,6 +1292,92 @@ document.getElementById("admin-reset").addEventListener("click", () => {
       pendingPayResolve(method);
       pendingPayResolve = null;
     }
+
+
+  // ====== CASH CHANGE MODAL ======
+  let pendingCashResolve = null;
+  let cashTotalDue = 0;
+
+  function openCashModal(total){
+    cashTotalDue = Number(total || 0);
+
+    // Prime UI
+    document.getElementById("cash-total").textContent = money(cashTotalDue);
+    document.getElementById("cash-received").value = "";
+    document.getElementById("cash-change").textContent = money(0);
+    document.getElementById("cash-hint").textContent = "Enter cash received";
+    document.getElementById("cash-confirm").disabled = true;
+
+    const modal = document.getElementById("cash-modal");
+    modal.style.display = "flex";
+    modal.setAttribute("aria-hidden","false");
+
+    // Focus the input for speed
+    setTimeout(() => document.getElementById("cash-received").focus(), 50);
+
+    return new Promise((resolve) => {
+      pendingCashResolve = resolve;
+    });
+  }
+
+  function closeCashModal(){
+    const modal = document.getElementById("cash-modal");
+    modal.style.display = "none";
+    modal.setAttribute("aria-hidden","true");
+  }
+
+  function resolveCash(result){
+    closeCashModal();
+    if(pendingCashResolve){
+      pendingCashResolve(result);
+      pendingCashResolve = null;
+    }
+  }
+
+  function roundUpTo(total, step){
+    const p = Math.round(Number(total || 0) * 100);
+    const stepP = Math.round(Number(step || 0) * 100);
+    if(stepP <= 0) return p / 100;
+    const up = Math.ceil(p / stepP) * stepP;
+    return up / 100;
+  }
+
+  function setCashReceived(value){
+    const input = document.getElementById("cash-received");
+    input.value = (Math.round(Number(value || 0) * 100) / 100).toFixed(2);
+    updateCashCalc();
+  }
+
+  function updateCashCalc(){
+    const input = document.getElementById("cash-received");
+    const confirmBtn = document.getElementById("cash-confirm");
+    const changeEl = document.getElementById("cash-change");
+    const hintEl = document.getElementById("cash-hint");
+
+    const received = Number(String(input.value || "").replace(/[^0-9.]/g,""));
+    const valid = Number.isFinite(received) && received > 0;
+
+    const diff = (valid ? received : 0) - cashTotalDue;
+
+    if(!valid){
+      changeEl.textContent = money(0);
+      hintEl.textContent = "Enter cash received";
+      confirmBtn.disabled = true;
+      return;
+    }
+
+    if(diff < 0){
+      changeEl.textContent = money(0);
+      hintEl.textContent = "Needs " + money(Math.abs(diff)) + " more";
+      confirmBtn.disabled = true;
+      return;
+    }
+
+    changeEl.textContent = money(diff);
+    hintEl.textContent = "Change due";
+    confirmBtn.disabled = false;
+  }
+
   }
 
   // ====== RENDER: MENU ======
@@ -1478,6 +1685,16 @@ if(entries.length === 0){
     const payment = await choosePaymentMethod();
     if(!payment) return; // cancelled
 
+    // If cash, collect cash received + change before saving
+    let cashReceived = null;
+    let cashChange = null;
+    if(payment === "cash"){
+      const res = await openCashModal(total);
+      if(!res) return; // cancelled
+      cashReceived = res.received;
+      cashChange = res.change;
+    }
+
     const total = currentTotal();
 
     const order = {
@@ -1485,6 +1702,8 @@ if(entries.length === 0){
       note: orderNote || "",
       total,
       payment, // "cash" | "card"
+      cashReceived,
+      cashChange,
       lines
     };
 
@@ -1688,6 +1907,28 @@ document.getElementById("variant-close").addEventListener("click", () => {
   document.getElementById("pay-cash").addEventListener("click", () => resolvePayment("cash"));
   document.getElementById("pay-card").addEventListener("click", () => resolvePayment("card"));
   document.getElementById("pay-cancel").addEventListener("click", () => resolvePayment(null));
+
+  // Cash change modal wiring
+  document.getElementById("cash-cancel").addEventListener("click", () => resolveCash(null));
+  document.getElementById("cash-confirm").addEventListener("click", () => {
+    const received = Number(String(document.getElementById("cash-received").value || "").replace(/[^0-9.]/g,""));
+    const change = Math.max(0, received - cashTotalDue);
+    resolveCash({ received: Math.round(received*100)/100, change: Math.round(change*100)/100 });
+  });
+  document.getElementById("cash-received").addEventListener("input", updateCashCalc);
+  document.getElementById("cash-modal").addEventListener("click", (e) => { if(e.target && e.target.id === "cash-modal") resolveCash(null); });
+
+  document.querySelectorAll('#cash-modal [data-cash]').forEach(b => {
+    b.addEventListener("click", () => {
+      const v = b.getAttribute("data-cash");
+      if(v === "exact") return setCashReceived(cashTotalDue);
+      if(v === "next5") return setCashReceived(roundUpTo(cashTotalDue, 5));
+      if(v === "next10") return setCashReceived(roundUpTo(cashTotalDue, 10));
+      const n = Number(v);
+      if(Number.isFinite(n)) return setCashReceived(n);
+    });
+  });
+
 
   document.getElementById("btn-edit-note").addEventListener("click", () => {
     const n = prompt("Optional note (e.g., table number / comp / etc.):", orderNote);
