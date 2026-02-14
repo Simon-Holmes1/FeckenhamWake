@@ -884,6 +884,7 @@ html[data-theme="hc"]{
   
 <script>
 
+
   function exportMenu(){
   // Use the live saved menu (not the draft)
   const payload = JSON.stringify(DRINKS, null, 2);
@@ -1879,65 +1880,77 @@ if(entries.length === 0){
 
   // ====== WIRING ======
 
-  document.getElementById("variant-modal").addEventListener("click", (e) => {
-  if(e.target.id === "variant-modal") e.target.style.display = "none";
-});
+function bindUI(){
+  try{
 
-document.getElementById("variant-close").addEventListener("click", () => {
-  document.getElementById("variant-modal").style.display = "none";
-});
-
-  document.getElementById("admin-export").addEventListener("click", exportMenu);
-  document.getElementById("admin-import").addEventListener("click", importMenu);
-
-  document.getElementById("tab-order").addEventListener("click", () => switchTab("order"));
-  document.getElementById("tab-orders").addEventListener("click", () => { renderOrders(); switchTab("orders"); });
-  document.getElementById("tab-summary").addEventListener("click", () => { renderSummary(); switchTab("summary"); });
-
-  document.getElementById("btn-clear-order").addEventListener("click", clearOrder);
-  document.getElementById("btn-undo").addEventListener("click", undo);
-  document.getElementById("btn-hold").addEventListener("click", holdCurrentOrder);
-  document.getElementById("btn-clear-held").addEventListener("click", clearActiveHold);
-  document.getElementById("btn-complete").addEventListener("click", completeOrderWithPay);
-
-  document.getElementById("btn-export").addEventListener("click", exportCSV);
-  document.getElementById("btn-clear-all").addEventListener("click", clearAll);
-  document.getElementById("btn-refresh-summary").addEventListener("click", () => { renderSummary(); updateStatusBar(); });
-
-  document.getElementById("pay-cash").addEventListener("click", () => resolvePayment("cash"));
-  document.getElementById("pay-card").addEventListener("click", () => resolvePayment("card"));
-  document.getElementById("pay-cancel").addEventListener("click", () => resolvePayment(null));
-
-  // Cash change modal wiring
-  document.getElementById("cash-cancel").addEventListener("click", () => resolveCash(null));
-  document.getElementById("cash-confirm").addEventListener("click", () => {
-    const received = Number(String(document.getElementById("cash-received").value || "").replace(/[^0-9.]/g,""));
-    const change = Math.max(0, received - cashTotalDue);
-    resolveCash({ received: Math.round(received*100)/100, change: Math.round(change*100)/100 });
+    document.getElementById("variant-modal").addEventListener("click", (e) => {
+    if(e.target.id === "variant-modal") e.target.style.display = "none";
   });
-  document.getElementById("cash-received").addEventListener("input", updateCashCalc);
-  document.getElementById("cash-modal").addEventListener("click", (e) => { if(e.target && e.target.id === "cash-modal") resolveCash(null); });
 
-  document.querySelectorAll('#cash-modal [data-cash]').forEach(b => {
-    b.addEventListener("click", () => {
-      const v = b.getAttribute("data-cash");
-      if(v === "exact") return setCashReceived(cashTotalDue);
-      if(v === "next5") return setCashReceived(roundUpTo(cashTotalDue, 5));
-      if(v === "next10") return setCashReceived(roundUpTo(cashTotalDue, 10));
-      const n = Number(v);
-      if(Number.isFinite(n)) return setCashReceived(n);
+  document.getElementById("variant-close").addEventListener("click", () => {
+    document.getElementById("variant-modal").style.display = "none";
+  });
+
+    document.getElementById("admin-export").addEventListener("click", exportMenu);
+    document.getElementById("admin-import").addEventListener("click", importMenu);
+
+    document.getElementById("tab-order").addEventListener("click", () => switchTab("order"));
+    document.getElementById("tab-orders").addEventListener("click", () => { renderOrders(); switchTab("orders"); });
+    document.getElementById("tab-summary").addEventListener("click", () => { renderSummary(); switchTab("summary"); });
+
+    document.getElementById("btn-clear-order").addEventListener("click", clearOrder);
+    document.getElementById("btn-undo").addEventListener("click", undo);
+    document.getElementById("btn-hold").addEventListener("click", holdCurrentOrder);
+    document.getElementById("btn-clear-held").addEventListener("click", clearActiveHold);
+    document.getElementById("btn-complete").addEventListener("click", completeOrderWithPay);
+
+    document.getElementById("btn-export").addEventListener("click", exportCSV);
+    document.getElementById("btn-clear-all").addEventListener("click", clearAll);
+    document.getElementById("btn-refresh-summary").addEventListener("click", () => { renderSummary(); updateStatusBar(); });
+
+    document.getElementById("pay-cash").addEventListener("click", () => resolvePayment("cash"));
+    document.getElementById("pay-card").addEventListener("click", () => resolvePayment("card"));
+    document.getElementById("pay-cancel").addEventListener("click", () => resolvePayment(null));
+
+    // Cash change modal wiring
+    document.getElementById("cash-cancel").addEventListener("click", () => resolveCash(null));
+    document.getElementById("cash-confirm").addEventListener("click", () => {
+      const received = Number(String(document.getElementById("cash-received").value || "").replace(/[^0-9.]/g,""));
+      const change = Math.max(0, received - cashTotalDue);
+      resolveCash({ received: Math.round(received*100)/100, change: Math.round(change*100)/100 });
     });
-  });
+    document.getElementById("cash-received").addEventListener("input", updateCashCalc);
+    document.getElementById("cash-modal").addEventListener("click", (e) => { if(e.target && e.target.id === "cash-modal") resolveCash(null); });
+
+    document.querySelectorAll('#cash-modal [data-cash]').forEach(b => {
+      b.addEventListener("click", () => {
+        const v = b.getAttribute("data-cash");
+        if(v === "exact") return setCashReceived(cashTotalDue);
+        if(v === "next5") return setCashReceived(roundUpTo(cashTotalDue, 5));
+        if(v === "next10") return setCashReceived(roundUpTo(cashTotalDue, 10));
+        const n = Number(v);
+        if(Number.isFinite(n)) return setCashReceived(n);
+      });
+    });
 
 
-  document.getElementById("btn-edit-note").addEventListener("click", () => {
-    const n = prompt("Optional note (e.g., table number / comp / etc.):", orderNote);
-    if(n === null) return;
-    orderNote = n.trim();
-    renderCurrentOrder();
-  });
+    document.getElementById("btn-edit-note").addEventListener("click", () => {
+      const n = prompt("Optional note (e.g., table number / comp / etc.):", orderNote);
+      if(n === null) return;
+      orderNote = n.trim();
+      renderCurrentOrder();
+    });
 
-  // ====== INIT ======
+
+  } catch(err){
+    console.error(err);
+    alert("App script error: " + (err && err.message ? err.message : err));
+  }
+}
+
+window.addEventListener("load", bindUI);
+
+// ====== INIT ======
   renderMenu();
   renderCurrentOrder();
   renderHeld();
@@ -2293,6 +2306,7 @@ if(gapAuto){
 applySettings();
 // Bind after DOM exists
 window.addEventListener("load", bindSettingsUI);
+
 
 </script>
 
