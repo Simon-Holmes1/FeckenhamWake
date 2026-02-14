@@ -1680,9 +1680,10 @@ if(entries.length === 0){
       return { id, name: d.name, price: d.price, qty, lineTotal: d.price * qty };
     });
     if(lines.length === 0) return;
-
     const payment = await choosePaymentMethod();
     if(!payment) return; // cancelled
+
+    const total = currentTotal();
 
     // If cash, collect cash received + change before saving
     let cashReceived = null;
@@ -1693,10 +1694,7 @@ if(entries.length === 0){
       cashReceived = res.received;
       cashChange = res.change;
     }
-
-    const total = currentTotal();
-
-    const order = {
+const order = {
       time: nowStamp(),
       note: orderNote || "",
       total,
